@@ -1,0 +1,3 @@
+[package]
+name = "sui_chess"
+edition = "2024"
