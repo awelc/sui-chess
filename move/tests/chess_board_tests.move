@@ -2,17 +2,28 @@
 /// Tests for chess_board module: board initialization, piece placement,
 /// and move application mechanics.
 module sui_chess::chess_board_tests {
-    use sui_chess::chess_board::{Self, sq};
+    use sui_chess::chess_board::{
+        Self,
+        sq,
+        PAWN,
+        ROOK,
+        KNIGHT,
+        BISHOP,
+        QUEEN,
+        KING,
+        WHITE,
+        BLACK,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H
+    };
 
     // Chess file constants (matching chess_board module's internal values).
-    const A: u8 = 0;
-    const B: u8 = 1;
-    const C: u8 = 2;
-    const D: u8 = 3;
-    const E: u8 = 4;
-    const F: u8 = 5;
-    const G: u8 = 6;
-    const H: u8 = 7;
 
     // ===== Board initialization tests =====
 
@@ -31,7 +42,7 @@ module sui_chess::chess_board_tests {
                 empty_count = empty_count + 1;
             } else {
                 let piece = sq.borrow();
-                if (piece.color() == chess_board::white()) {
+                if (piece.color() == WHITE()) {
                     white_count = white_count + 1;
                 } else {
                     black_count = black_count + 1;
@@ -51,20 +62,20 @@ module sui_chess::chess_board_tests {
     fun test_new_board_white_back_rank() {
         let board = chess_board::new();
         let expected_types = vector[
-            chess_board::rook_type(),
-            chess_board::knight_type(),
-            chess_board::bishop_type(),
-            chess_board::queen_type(),
-            chess_board::king_type(),
-            chess_board::bishop_type(),
-            chess_board::knight_type(),
-            chess_board::rook_type(),
+            ROOK(),
+            KNIGHT(),
+            BISHOP(),
+            QUEEN(),
+            KING(),
+            BISHOP(),
+            KNIGHT(),
+            ROOK(),
         ];
         let mut file: u8 = 0;
         while (file < 8) {
             let piece = board.piece_at(sq(file, 1)).borrow();
             assert!(piece.kind() == *expected_types.borrow(file as u64));
-            assert!(piece.color() == chess_board::white());
+            assert!(piece.color() == WHITE());
             assert!(!piece.has_moved());
             file = file + 1;
         };
@@ -77,20 +88,20 @@ module sui_chess::chess_board_tests {
     fun test_new_board_black_back_rank() {
         let board = chess_board::new();
         let expected_types = vector[
-            chess_board::rook_type(),
-            chess_board::knight_type(),
-            chess_board::bishop_type(),
-            chess_board::queen_type(),
-            chess_board::king_type(),
-            chess_board::bishop_type(),
-            chess_board::knight_type(),
-            chess_board::rook_type(),
+            ROOK(),
+            KNIGHT(),
+            BISHOP(),
+            QUEEN(),
+            KING(),
+            BISHOP(),
+            KNIGHT(),
+            ROOK(),
         ];
         let mut file: u8 = 0;
         while (file < 8) {
             let piece = board.piece_at(sq(file, 8)).borrow();
             assert!(piece.kind() == *expected_types.borrow(file as u64));
-            assert!(piece.color() == chess_board::black());
+            assert!(piece.color() == BLACK());
             file = file + 1;
         };
     }
@@ -106,11 +117,11 @@ module sui_chess::chess_board_tests {
         let mut file: u8 = 0;
         while (file < 8) {
             let wp = board.piece_at(sq(file, 2)).borrow();
-            assert!(wp.kind() == chess_board::pawn_type());
-            assert!(wp.color() == chess_board::white());
+            assert!(wp.kind() == PAWN());
+            assert!(wp.color() == WHITE());
             let bp = board.piece_at(sq(file, 7)).borrow();
-            assert!(bp.kind() == chess_board::pawn_type());
-            assert!(bp.color() == chess_board::black());
+            assert!(bp.kind() == PAWN());
+            assert!(bp.color() == BLACK());
             file = file + 1;
         };
     }
@@ -165,12 +176,12 @@ module sui_chess::chess_board_tests {
     /// Other squares should remain empty.
     fun test_set_and_get_piece() {
         let mut board = chess_board::empty();
-        let queen = chess_board::new_piece(chess_board::queen_type(), chess_board::white());
-        chess_board::set_piece(&mut board, sq(E, 4), option::some(queen));
-        let read = board.piece_at(sq(E, 4)).borrow();
-        assert!(read.kind() == chess_board::queen_type());
-        assert!(read.color() == chess_board::white());
-        assert!(board.is_empty(sq(D, 4)));
+        let queen = chess_board::new_piece(QUEEN(), WHITE());
+        chess_board::set_piece(&mut board, sq(E(), 4), option::some(queen));
+        let read = board.piece_at(sq(E(), 4)).borrow();
+        assert!(read.kind() == QUEEN());
+        assert!(read.color() == WHITE());
+        assert!(board.is_empty(sq(D(), 4)));
     }
 
     // ===== apply_move tests =====
@@ -190,17 +201,17 @@ module sui_chess::chess_board_tests {
         let board = chess_board::new();
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 2),
-            sq(E, 4),
+            WHITE(),
+            sq(E(), 2),
+            sq(E(), 4),
             0,
         );
-        assert!(new_board.is_empty(sq(E, 2)));
-        let piece = new_board.piece_at(sq(E, 4)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::white());
+        assert!(new_board.is_empty(sq(E(), 2)));
+        let piece = new_board.piece_at(sq(E(), 4)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == WHITE());
         assert!(piece.has_moved());
-        assert!(new_board.ep_target_col() == option::some(E));
+        assert!(new_board.ep_target_col() == option::some(E()));
     }
 
     #[test]
@@ -216,13 +227,13 @@ module sui_chess::chess_board_tests {
         let board = chess_board::new();
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 2),
-            sq(E, 3),
+            WHITE(),
+            sq(E(), 2),
+            sq(E(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 3)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
+        let piece = new_board.piece_at(sq(E(), 3)).borrow();
+        assert!(piece.kind() == PAWN());
         assert!(piece.has_moved());
         assert!(new_board.ep_target_col().is_none());
     }
@@ -239,26 +250,26 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::white())),
+            sq(E(), 4),
+            option::some(chess_board::new_piece(PAWN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(F, 5),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(F(), 5),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 4),
-            sq(F, 5),
+            WHITE(),
+            sq(E(), 4),
+            sq(F(), 5),
             0,
         );
-        let piece = new_board.piece_at(sq(F, 5)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::white());
-        assert!(new_board.is_empty(sq(E, 4)));
+        let piece = new_board.piece_at(sq(F(), 5)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == WHITE());
+        assert!(new_board.is_empty(sq(E(), 4)));
     }
 
     #[test]
@@ -273,25 +284,25 @@ module sui_chess::chess_board_tests {
     /// 5 | p  P |                 5 | .  . |  <- black pawn on d5 removed
     /// 4 | .  . |                 4 | .  . |
     fun test_en_passant_capture() {
-        let mut board = chess_board::empty_with_ep(D);
+        let mut board = chess_board::empty_with_ep(D());
         chess_board::set_piece(
             &mut board,
-            sq(E, 5),
+            sq(E(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 5),
+            sq(D(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
@@ -299,16 +310,16 @@ module sui_chess::chess_board_tests {
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 5),
-            sq(D, 6),
+            WHITE(),
+            sq(E(), 5),
+            sq(D(), 6),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 6)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::white());
-        assert!(new_board.is_empty(sq(D, 5))); // captured pawn gone
-        assert!(new_board.is_empty(sq(E, 5))); // origin cleared
+        let piece = new_board.piece_at(sq(D(), 6)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == WHITE());
+        assert!(new_board.is_empty(sq(D(), 5))); // captured pawn gone
+        assert!(new_board.is_empty(sq(E(), 5))); // origin cleared
         assert!(new_board.ep_target_col().is_none());
     }
 
@@ -324,11 +335,11 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 7),
+            sq(A(), 7),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
@@ -336,14 +347,14 @@ module sui_chess::chess_board_tests {
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(A, 7),
-            sq(A, 8),
-            chess_board::queen_type(),
+            WHITE(),
+            sq(A(), 7),
+            sq(A(), 8),
+            QUEEN(),
         );
-        let piece = new_board.piece_at(sq(A, 8)).borrow();
-        assert!(piece.kind() == chess_board::queen_type());
-        assert!(piece.color() == chess_board::white());
+        let piece = new_board.piece_at(sq(A(), 8)).borrow();
+        assert!(piece.kind() == QUEEN());
+        assert!(piece.color() == WHITE());
         assert!(piece.has_moved());
     }
 
@@ -358,30 +369,30 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(H(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 1),
-            sq(G, 1),
+            WHITE(),
+            sq(E(), 1),
+            sq(G(), 1),
             0,
         );
-        let k = new_board.piece_at(sq(G, 1)).borrow();
-        assert!(k.kind() == chess_board::king_type());
+        let k = new_board.piece_at(sq(G(), 1)).borrow();
+        assert!(k.kind() == KING());
         assert!(k.has_moved());
-        let r = new_board.piece_at(sq(F, 1)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
+        let r = new_board.piece_at(sq(F(), 1)).borrow();
+        assert!(r.kind() == ROOK());
         assert!(r.has_moved());
-        assert!(new_board.is_empty(sq(E, 1)));
-        assert!(new_board.is_empty(sq(H, 1)));
+        assert!(new_board.is_empty(sq(E(), 1)));
+        assert!(new_board.is_empty(sq(H(), 1)));
     }
 
     #[test]
@@ -394,29 +405,29 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 1),
-            sq(C, 1),
+            WHITE(),
+            sq(E(), 1),
+            sq(C(), 1),
             0,
         );
-        let k = new_board.piece_at(sq(C, 1)).borrow();
-        assert!(k.kind() == chess_board::king_type());
-        let r = new_board.piece_at(sq(D, 1)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
+        let k = new_board.piece_at(sq(C(), 1)).borrow();
+        assert!(k.kind() == KING());
+        let r = new_board.piece_at(sq(D(), 1)).borrow();
+        assert!(r.kind() == ROOK());
         assert!(r.has_moved());
-        assert!(new_board.is_empty(sq(E, 1)));
-        assert!(new_board.is_empty(sq(A, 1)));
+        assert!(new_board.is_empty(sq(E(), 1)));
+        assert!(new_board.is_empty(sq(A(), 1)));
     }
 
     #[test]
@@ -429,28 +440,28 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(E(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::black(),
-            sq(E, 8),
-            sq(G, 8),
+            BLACK(),
+            sq(E(), 8),
+            sq(G(), 8),
             0,
         );
-        let k = new_board.piece_at(sq(G, 8)).borrow();
-        assert!(k.kind() == chess_board::king_type());
-        assert!(k.color() == chess_board::black());
-        let r = new_board.piece_at(sq(F, 8)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
-        assert!(r.color() == chess_board::black());
+        let k = new_board.piece_at(sq(G(), 8)).borrow();
+        assert!(k.kind() == KING());
+        assert!(k.color() == BLACK());
+        let r = new_board.piece_at(sq(F(), 8)).borrow();
+        assert!(r.kind() == ROOK());
+        assert!(r.color() == BLACK());
     }
 
     #[test]
@@ -463,26 +474,26 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(E(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 8),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(A(), 8),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::black(),
-            sq(E, 8),
-            sq(C, 8),
+            BLACK(),
+            sq(E(), 8),
+            sq(C(), 8),
             0,
         );
-        let k = new_board.piece_at(sq(C, 8)).borrow();
-        assert!(k.kind() == chess_board::king_type());
-        let r = new_board.piece_at(sq(D, 8)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
+        let k = new_board.piece_at(sq(C(), 8)).borrow();
+        assert!(k.kind() == KING());
+        let r = new_board.piece_at(sq(D(), 8)).borrow();
+        assert!(r.kind() == ROOK());
     }
 
     #[test]
@@ -498,16 +509,16 @@ module sui_chess::chess_board_tests {
         let board = chess_board::new();
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(B, 1),
-            sq(C, 3),
+            WHITE(),
+            sq(B(), 1),
+            sq(C(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(C, 3)).borrow();
-        assert!(piece.kind() == chess_board::knight_type());
-        assert!(piece.color() == chess_board::white());
+        let piece = new_board.piece_at(sq(C(), 3)).borrow();
+        assert!(piece.kind() == KNIGHT());
+        assert!(piece.color() == WHITE());
         assert!(piece.has_moved());
-        assert!(new_board.is_empty(sq(B, 1)));
+        assert!(new_board.is_empty(sq(B(), 1)));
         assert!(new_board.ep_target_col().is_none());
     }
 
@@ -528,15 +539,15 @@ module sui_chess::chess_board_tests {
         let board = chess_board::new();
 
         // Move 1: white e2→e4 — EP target set to E file.
-        let board2 = board.apply_move(chess_board::white(), sq(E, 2), sq(E, 4), 0);
-        assert!(board2.ep_target_col() == option::some(E));
+        let board2 = board.apply_move(WHITE(), sq(E(), 2), sq(E(), 4), 0);
+        assert!(board2.ep_target_col() == option::some(E()));
 
         // Move 2: black d7→d5 — EP target now D file (white's expired).
-        let board3 = board2.apply_move(chess_board::black(), sq(D, 7), sq(D, 5), 0);
-        assert!(board3.ep_target_col() == option::some(D));
+        let board3 = board2.apply_move(BLACK(), sq(D(), 7), sq(D(), 5), 0);
+        assert!(board3.ep_target_col() == option::some(D()));
 
         // Move 3: white Nb1→c3 — no double push, EP target cleared.
-        let board4 = board3.apply_move(chess_board::white(), sq(B, 1), sq(C, 3), 0);
+        let board4 = board3.apply_move(WHITE(), sq(B(), 1), sq(C(), 3), 0);
         assert!(board4.ep_target_col().is_none());
     }
 
@@ -552,11 +563,11 @@ module sui_chess::chess_board_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(D, 7),
+            sq(D(), 7),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
@@ -564,13 +575,13 @@ module sui_chess::chess_board_tests {
 
         let new_board = chess_board::apply_move(
             &board,
-            chess_board::white(),
-            sq(D, 7),
-            sq(D, 8),
-            chess_board::knight_type(),
+            WHITE(),
+            sq(D(), 7),
+            sq(D(), 8),
+            KNIGHT(),
         );
-        let piece = new_board.piece_at(sq(D, 8)).borrow();
-        assert!(piece.kind() == chess_board::knight_type());
-        assert!(piece.color() == chess_board::white());
+        let piece = new_board.piece_at(sq(D(), 8)).borrow();
+        assert!(piece.kind() == KNIGHT());
+        assert!(piece.color() == WHITE());
     }
 }

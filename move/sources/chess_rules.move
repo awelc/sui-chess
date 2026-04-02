@@ -4,21 +4,20 @@
 /// (castling, en-passant, promotion), check detection, checkmate, and stalemate.
 /// All validation is on-chain since real money (bets) will be at stake.
 module sui_chess::chess_rules {
-    use sui_chess::chess_board::{Self, Board, Piece, Pos};
-
-    // ===== Constants =====
-
-    // Piece type constants (must match chess_board).
-    const PAWN: u8 = 1;
-    const ROOK: u8 = 2;
-    const KNIGHT: u8 = 3;
-    const BISHOP: u8 = 4;
-    const QUEEN: u8 = 5;
-    const KING: u8 = 6;
-
-    // Color constants.
-    const WHITE: u8 = 0;
-    const BLACK: u8 = 1;
+    use sui_chess::chess_board::{
+        Self,
+        Board,
+        Piece,
+        Pos,
+        PAWN,
+        ROOK,
+        KNIGHT,
+        BISHOP,
+        QUEEN,
+        KING,
+        WHITE,
+        BLACK
+    };
 
     // ===== Smart errors =====
 
@@ -67,17 +66,17 @@ module sui_chess::chess_rules {
 
         // Validate move shape based on piece type.
         let pt = piece.kind();
-        let valid = if (pt == PAWN) {
+        let valid = if (pt == PAWN()) {
             validate_pawn_move(board, piece, player, from, to)
-        } else if (pt == KNIGHT) {
+        } else if (pt == KNIGHT()) {
             validate_knight_move(from, to)
-        } else if (pt == BISHOP) {
+        } else if (pt == BISHOP()) {
             validate_bishop_move(board, from, to)
-        } else if (pt == ROOK) {
+        } else if (pt == ROOK()) {
             validate_rook_move(board, from, to)
-        } else if (pt == QUEEN) {
+        } else if (pt == QUEEN()) {
             validate_queen_move(board, from, to)
-        } else if (pt == KING) {
+        } else if (pt == KING()) {
             validate_king_move(board, piece, player, from, to)
         } else {
             false
@@ -85,9 +84,9 @@ module sui_chess::chess_rules {
         assert!(valid, EInvalidPieceMove);
 
         // Validate promotion: must promote when pawn reaches last rank, must not otherwise.
-        let last_rank = if (player == WHITE) { 7u8 } else { 0u8 };
-        if (pt == PAWN && to.row() == last_rank) {
-            assert!(promotion >= ROOK && promotion <= QUEEN, EInvalidPromotion);
+        let last_rank = if (player == WHITE()) { 7u8 } else { 0u8 };
+        if (pt == PAWN() && to.row() == last_rank) {
+            assert!(promotion >= ROOK() && promotion <= QUEEN(), EInvalidPromotion);
         } else {
             assert!(promotion == 0, EInvalidPromotion);
         };
@@ -102,7 +101,9 @@ module sui_chess::chess_rules {
     /// Returns true if the given player's king is in check.
     public fun is_in_check(board: &Board, player: u8): bool {
         let king_pos = find_king(board, player);
-        let opponent = if (player == WHITE) { BLACK } else { WHITE };
+        let opponent = if (player == WHITE()) { BLACK() } else {
+            WHITE()
+        };
 
         // Check if any opponent piece can attack the king's square.
         let squares = board.squares();
@@ -146,7 +147,7 @@ module sui_chess::chess_rules {
         let col_diff = from_col.diff(to_col);
 
         // Direction: white moves up (+row), black moves down (-row).
-        let (forward_one, start_rank) = if (player == WHITE) {
+        let (forward_one, start_rank) = if (player == WHITE()) {
             (from_row + 1, 1u8)
         } else {
             (from_row - 1, 6u8)
@@ -159,7 +160,9 @@ module sui_chess::chess_rules {
 
         // Forward two squares from starting rank (unmoved pawn).
         if (to_col == from_col && from_row == start_rank && !piece.has_moved()) {
-            let forward_two = if (player == WHITE) { from_row + 2 } else { from_row - 2 };
+            let forward_two = if (player == WHITE()) { from_row + 2 } else {
+                from_row - 2
+            };
             if (to_row == forward_two) {
                 // Both intermediate and destination squares must be empty.
                 let intermediate = chess_board::sq(from_col, forward_one + 1);
@@ -257,7 +260,7 @@ module sui_chess::chess_rules {
         let rook_sq = board.piece_at(rook_pos);
         if (rook_sq.is_none()) { return false };
         let rook = rook_sq.borrow();
-        if (rook.kind() != ROOK || rook.color() != player) {
+        if (rook.kind() != ROOK() || rook.color() != player) {
             return false
         };
         if (rook.has_moved()) { return false };
@@ -295,26 +298,26 @@ module sui_chess::chess_rules {
     /// considering whether the attack would leave the attacker's own king in check.
     fun can_attack(board: &Board, piece: &Piece, attacker_pos: Pos, target_pos: Pos): bool {
         let pt = piece.kind();
-        if (pt == PAWN) {
+        if (pt == PAWN()) {
             // Pawns attack diagonally forward (one square).
             let col_diff = attacker_pos.col().diff(target_pos.col());
             if (col_diff != 1) { return false };
             let player = piece.color();
-            let expected_row = if (player == WHITE) {
+            let expected_row = if (player == WHITE()) {
                 attacker_pos.row() + 1
             } else {
                 attacker_pos.row() - 1
             };
             target_pos.row() == expected_row
-        } else if (pt == KNIGHT) {
+        } else if (pt == KNIGHT()) {
             validate_knight_move(attacker_pos, target_pos)
-        } else if (pt == BISHOP) {
+        } else if (pt == BISHOP()) {
             validate_bishop_move(board, attacker_pos, target_pos)
-        } else if (pt == ROOK) {
+        } else if (pt == ROOK()) {
             validate_rook_move(board, attacker_pos, target_pos)
-        } else if (pt == QUEEN) {
+        } else if (pt == QUEEN()) {
             validate_queen_move(board, attacker_pos, target_pos)
-        } else if (pt == KING) {
+        } else if (pt == KING()) {
             let row_diff = attacker_pos.row().diff(target_pos.row());
             let col_diff = attacker_pos.col().diff(target_pos.col());
             row_diff <= 1 && col_diff <= 1 && (row_diff + col_diff) > 0
@@ -325,7 +328,9 @@ module sui_chess::chess_rules {
 
     /// Returns true if the given square is attacked by any piece of the opponent.
     fun is_square_attacked(board: &Board, target: Pos, player: u8): bool {
-        let opponent = if (player == WHITE) { BLACK } else { WHITE };
+        let opponent = if (player == WHITE()) { BLACK() } else {
+            WHITE()
+        };
         let squares = board.squares();
         let mut i: u64 = 0;
         while (i < 64) {
@@ -352,7 +357,7 @@ module sui_chess::chess_rules {
             let sq = squares.borrow(i);
             if (sq.is_some()) {
                 let piece = sq.borrow();
-                if (piece.kind() == KING && piece.color() == player) {
+                if (piece.kind() == KING() && piece.color() == player) {
                     return chess_board::sq((i % 8) as u8, (i / 8) as u8 + 1)
                 };
             };
@@ -403,17 +408,17 @@ module sui_chess::chess_rules {
                     let own_piece_at_dest = to_sq.is_some() && to_sq.borrow().color() == player;
 
                     if (!own_piece_at_dest) {
-                        let shape_valid = if (pt == PAWN) {
+                        let shape_valid = if (pt == PAWN()) {
                             validate_pawn_move(board, piece, player, from, to)
-                        } else if (pt == KNIGHT) {
+                        } else if (pt == KNIGHT()) {
                             validate_knight_move(from, to)
-                        } else if (pt == BISHOP) {
+                        } else if (pt == BISHOP()) {
                             validate_bishop_move(board, from, to)
-                        } else if (pt == ROOK) {
+                        } else if (pt == ROOK()) {
                             validate_rook_move(board, from, to)
-                        } else if (pt == QUEEN) {
+                        } else if (pt == QUEEN()) {
                             validate_queen_move(board, from, to)
-                        } else if (pt == KING) {
+                        } else if (pt == KING()) {
                             validate_king_move(board, piece, player, from, to)
                         } else {
                             false
@@ -421,9 +426,11 @@ module sui_chess::chess_rules {
 
                         if (shape_valid) {
                             // For pawn promotion, try queen (any legal promotion suffices).
-                            let promo = if (pt == PAWN) {
-                                let last_rank = if (player == WHITE) { 7u8 } else { 0u8 };
-                                if (to_row == last_rank) { QUEEN } else { 0u8 }
+                            let promo = if (pt == PAWN()) {
+                                let last_rank = if (player == WHITE()) { 7u8 } else {
+                                    0u8
+                                };
+                                if (to_row == last_rank) { QUEEN() } else { 0u8 }
                             } else {
                                 0u8
                             };

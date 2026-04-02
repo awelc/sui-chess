@@ -5,8 +5,7 @@
 /// Empty squares are `option::none()`, occupied squares are `option::some(piece)`.
 ///
 /// Positions are represented as `Pos` structs. Use `sq(file, rank)` to create
-/// from chess notation: `sq(E, 2)` returns the position for square e2.
-#[allow(unused_const)]
+/// from chess notation: `sq(E(), 2)` returns the position for square e2.
 module sui_chess::chess_board {
     // Method aliases for Piece accessors (readable as piece.kind(), piece.color()).
     public use fun piece_kind as Piece.kind;
@@ -18,33 +17,47 @@ module sui_chess::chess_board {
     public use fun sui_chess::chess_rules::is_checkmate as Board.is_checkmate;
     public use fun sui_chess::chess_rules::is_stalemate as Board.is_stalemate;
 
-    // ===== Constants: piece types =====
-
-    const PAWN: u8 = 1;
-    const ROOK: u8 = 2;
-    const KNIGHT: u8 = 3;
-    const BISHOP: u8 = 4;
-    const QUEEN: u8 = 5;
-    const KING: u8 = 6;
-
-    // ===== Constants: colors =====
-
-    const WHITE: u8 = 0;
-    const BLACK: u8 = 1;
-
-    // ===== Constants: chess files (column indices) =====
-    const A: u8 = 0;
-    const B: u8 = 1;
-    const C: u8 = 2;
-    const D: u8 = 3;
-    const E: u8 = 4;
-    const F: u8 = 5;
-    const G: u8 = 6;
-    const H: u8 = 7;
-
     // ===== Errors =====
 
     const EIndexOutOfBounds: u64 = 0;
+
+    // ===== Piece types =====
+
+    public fun PAWN(): u8 { 1 }
+
+    public fun ROOK(): u8 { 2 }
+
+    public fun KNIGHT(): u8 { 3 }
+
+    public fun BISHOP(): u8 { 4 }
+
+    public fun QUEEN(): u8 { 5 }
+
+    public fun KING(): u8 { 6 }
+
+    // ===== Colors =====
+
+    public fun WHITE(): u8 { 0 }
+
+    public fun BLACK(): u8 { 1 }
+
+    // ===== Chess files (column indices) =====
+
+    public fun A(): u8 { 0 }
+
+    public fun B(): u8 { 1 }
+
+    public fun C(): u8 { 2 }
+
+    public fun D(): u8 { 3 }
+
+    public fun E(): u8 { 4 }
+
+    public fun F(): u8 { 5 }
+
+    public fun G(): u8 { 6 }
+
+    public fun H(): u8 { 7 }
 
     // ===== Position struct =====
 
@@ -78,7 +91,7 @@ module sui_chess::chess_board {
     // ===== Position constructors and accessors =====
 
     /// Convert chess file (A..H) + rank (1..8) to a board position.
-    /// Example: `sq(E, 2)` returns the position for square e2.
+    /// Example: `sq(E(), 2)` returns the position for square e2.
     public fun sq(file: u8, rank: u8): Pos {
         Pos { row: rank - 1, col: file }
     }
@@ -147,19 +160,19 @@ module sui_chess::chess_board {
         let mut squares = vector::empty<Option<Piece>>();
 
         // Row 0: white back rank (a1..h1)
-        squares.push_back(option::some(new_piece(ROOK, WHITE)));
-        squares.push_back(option::some(new_piece(KNIGHT, WHITE)));
-        squares.push_back(option::some(new_piece(BISHOP, WHITE)));
-        squares.push_back(option::some(new_piece(QUEEN, WHITE)));
-        squares.push_back(option::some(new_piece(KING, WHITE)));
-        squares.push_back(option::some(new_piece(BISHOP, WHITE)));
-        squares.push_back(option::some(new_piece(KNIGHT, WHITE)));
-        squares.push_back(option::some(new_piece(ROOK, WHITE)));
+        squares.push_back(option::some(new_piece(ROOK(), WHITE())));
+        squares.push_back(option::some(new_piece(KNIGHT(), WHITE())));
+        squares.push_back(option::some(new_piece(BISHOP(), WHITE())));
+        squares.push_back(option::some(new_piece(QUEEN(), WHITE())));
+        squares.push_back(option::some(new_piece(KING(), WHITE())));
+        squares.push_back(option::some(new_piece(BISHOP(), WHITE())));
+        squares.push_back(option::some(new_piece(KNIGHT(), WHITE())));
+        squares.push_back(option::some(new_piece(ROOK(), WHITE())));
 
         // Row 1: white pawns
         let mut i: u64 = 0;
         while (i < 8) {
-            squares.push_back(option::some(new_piece(PAWN, WHITE)));
+            squares.push_back(option::some(new_piece(PAWN(), WHITE())));
             i = i + 1;
         };
 
@@ -173,19 +186,19 @@ module sui_chess::chess_board {
         // Row 6: black pawns
         i = 0;
         while (i < 8) {
-            squares.push_back(option::some(new_piece(PAWN, BLACK)));
+            squares.push_back(option::some(new_piece(PAWN(), BLACK())));
             i = i + 1;
         };
 
         // Row 7: black back rank (a8..h8)
-        squares.push_back(option::some(new_piece(ROOK, BLACK)));
-        squares.push_back(option::some(new_piece(KNIGHT, BLACK)));
-        squares.push_back(option::some(new_piece(BISHOP, BLACK)));
-        squares.push_back(option::some(new_piece(QUEEN, BLACK)));
-        squares.push_back(option::some(new_piece(KING, BLACK)));
-        squares.push_back(option::some(new_piece(BISHOP, BLACK)));
-        squares.push_back(option::some(new_piece(KNIGHT, BLACK)));
-        squares.push_back(option::some(new_piece(ROOK, BLACK)));
+        squares.push_back(option::some(new_piece(ROOK(), BLACK())));
+        squares.push_back(option::some(new_piece(KNIGHT(), BLACK())));
+        squares.push_back(option::some(new_piece(BISHOP(), BLACK())));
+        squares.push_back(option::some(new_piece(QUEEN(), BLACK())));
+        squares.push_back(option::some(new_piece(KING(), BLACK())));
+        squares.push_back(option::some(new_piece(BISHOP(), BLACK())));
+        squares.push_back(option::some(new_piece(KNIGHT(), BLACK())));
+        squares.push_back(option::some(new_piece(ROOK(), BLACK())));
 
         Board { squares, ep_target_col: option::none() }
     }
@@ -233,7 +246,7 @@ module sui_chess::chess_board {
         };
 
         // --- Pawn special cases ---
-        if (piece.piece_type == PAWN) {
+        if (piece.piece_type == PAWN()) {
             // Double push: record EP target column.
             let row_diff = if (to.row > from.row) {
                 to.row - from.row
@@ -262,19 +275,19 @@ module sui_chess::chess_board {
         };
 
         // --- Castling: move the rook alongside the king ---
-        if (piece.piece_type == KING) {
+        if (piece.piece_type == KING()) {
             let col_diff = if (to.col > from.col) {
                 to.col - from.col
             } else {
                 from.col - to.col
             };
             if (col_diff == 2) {
-                // Kingside castle: rook from col 7 → col 5
-                // Queenside castle: rook from col 0 → col 3
+                // Kingside castle: rook from col H → col F
+                // Queenside castle: rook from col A → col D
                 let (rook_from_col, rook_to_col) = if (to.col > from.col) {
-                    (H, F)
+                    (H(), F())
                 } else {
-                    (A, D)
+                    (A(), D())
                 };
                 let rook_from = Pos { row: from.row, col: rook_from_col };
                 let rook_to = Pos { row: from.row, col: rook_to_col };
@@ -291,22 +304,4 @@ module sui_chess::chess_board {
 
         new_board
     }
-
-    // ===== Constants accessors (for use by other modules) =====
-
-    public fun pawn_type(): u8 { PAWN }
-
-    public fun rook_type(): u8 { ROOK }
-
-    public fun knight_type(): u8 { KNIGHT }
-
-    public fun bishop_type(): u8 { BISHOP }
-
-    public fun queen_type(): u8 { QUEEN }
-
-    public fun king_type(): u8 { KING }
-
-    public fun white(): u8 { WHITE }
-
-    public fun black(): u8 { BLACK }
 }

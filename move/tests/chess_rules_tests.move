@@ -2,17 +2,31 @@
 /// Tests for chess_rules module: move validation, check detection,
 /// checkmate, stalemate, and special moves (castling, en-passant, promotion).
 module sui_chess::chess_rules_tests {
-    use sui_chess::{chess_board::{Self, sq}, chess_rules};
+    use sui_chess::{
+        chess_board::{
+            Self,
+            sq,
+            PAWN,
+            ROOK,
+            KNIGHT,
+            BISHOP,
+            QUEEN,
+            KING,
+            WHITE,
+            BLACK,
+            A,
+            B,
+            C,
+            D,
+            E,
+            F,
+            G,
+            H
+        },
+        chess_rules
+    };
 
     // Chess file constants.
-    const A: u8 = 0;
-    const B: u8 = 1;
-    const C: u8 = 2;
-    const D: u8 = 3;
-    const E: u8 = 4;
-    const F: u8 = 5;
-    const G: u8 = 6;
-    const H: u8 = 7;
 
     // ===== Pawn tests =====
     // Pawns are the only piece where color affects movement direction.
@@ -31,14 +45,14 @@ module sui_chess::chess_rules_tests {
         let board = chess_board::new();
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 2),
-            sq(E, 3),
+            WHITE(),
+            sq(E(), 2),
+            sq(E(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 3)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(new_board.is_empty(sq(E, 2)));
+        let piece = new_board.piece_at(sq(E(), 3)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(new_board.is_empty(sq(E(), 2)));
     }
 
     #[test]
@@ -52,30 +66,30 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::black(),
-            sq(D, 7),
-            sq(D, 6),
+            BLACK(),
+            sq(D(), 7),
+            sq(D(), 6),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 6)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::black());
+        let piece = new_board.piece_at(sq(D(), 6)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == BLACK());
     }
 
     // --- Forward two ---
@@ -92,13 +106,13 @@ module sui_chess::chess_rules_tests {
         let board = chess_board::new();
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 2),
-            sq(E, 4),
+            WHITE(),
+            sq(E(), 2),
+            sq(E(), 4),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 4)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
+        let piece = new_board.piece_at(sq(E(), 4)).borrow();
+        assert!(piece.kind() == PAWN());
     }
 
     #[test]
@@ -113,30 +127,30 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::black(),
-            sq(D, 7),
-            sq(D, 5),
+            BLACK(),
+            sq(D(), 7),
+            sq(D(), 5),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 5)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::black());
+        let piece = new_board.piece_at(sq(D(), 5)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == BLACK());
     }
 
     // --- Forward two blocked ---
@@ -154,26 +168,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 2),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::white())),
+            sq(E(), 2),
+            option::some(chess_board::new_piece(PAWN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 3),
-            option::some(chess_board::new_piece(chess_board::knight_type(), chess_board::black())),
+            sq(E(), 3),
+            option::some(chess_board::new_piece(KNIGHT(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 2), sq(E, 4), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 2), sq(E(), 4), 0);
     }
 
     #[test]
@@ -189,26 +203,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 6),
-            option::some(chess_board::new_piece(chess_board::knight_type(), chess_board::white())),
+            sq(D(), 6),
+            option::some(chess_board::new_piece(KNIGHT(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 7), sq(D, 5), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 7), sq(D(), 5), 0);
     }
 
     // --- Forward two already moved ---
@@ -226,27 +240,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 3),
+            sq(E(), 3),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 3), sq(E, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 3), sq(E(), 5), 0);
     }
 
     #[test]
@@ -262,27 +276,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 6),
+            sq(D(), 6),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 6), sq(D, 4), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 6), sq(D(), 4), 0);
     }
 
     // --- Backward ---
@@ -299,27 +313,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 3),
+            sq(E(), 3),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 3), sq(E, 2), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 3), sq(E(), 2), 0);
     }
 
     #[test]
@@ -334,27 +348,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 6),
+            sq(D(), 6),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 6), sq(D, 7), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 6), sq(D(), 7), 0);
     }
 
     // --- Diagonal capture ---
@@ -370,41 +384,41 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
+            sq(E(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 5),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 5),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 4),
-            sq(D, 5),
+            WHITE(),
+            sq(E(), 4),
+            sq(D(), 5),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 5)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::white());
+        let piece = new_board.piece_at(sq(D(), 5)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == WHITE());
     }
 
     #[test]
@@ -418,41 +432,41 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 5),
+            sq(D(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::white())),
+            sq(E(), 4),
+            option::some(chess_board::new_piece(PAWN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::black(),
-            sq(D, 5),
-            sq(E, 4),
+            BLACK(),
+            sq(D(), 5),
+            sq(E(), 4),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 4)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::black());
+        let piece = new_board.piece_at(sq(E(), 4)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == BLACK());
     }
 
     // --- Diagonal to empty ---
@@ -469,27 +483,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
+            sq(E(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 4), sq(D(), 5), 0);
     }
 
     #[test]
@@ -504,27 +518,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 5),
+            sq(D(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 5), sq(E, 4), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 5), sq(E(), 4), 0);
     }
 
     // --- En-passant ---
@@ -537,51 +551,51 @@ module sui_chess::chess_rules_tests {
     /// 6 | .  . |          6 | P  . |  <- white lands on d6
     /// 5 | p  P |          5 | .  . |  <- black pawn removed
     fun test_white_pawn_en_passant() {
-        let mut board = chess_board::empty_with_ep(D);
+        let mut board = chess_board::empty_with_ep(D());
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 5),
+            sq(E(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 5),
+            sq(D(), 5),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 5),
-            sq(D, 6),
+            WHITE(),
+            sq(E(), 5),
+            sq(D(), 6),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 6)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::white());
-        assert!(new_board.is_empty(sq(D, 5)));
+        let piece = new_board.piece_at(sq(D(), 6)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == WHITE());
+        assert!(new_board.is_empty(sq(D(), 5)));
     }
 
     #[test]
@@ -592,51 +606,51 @@ module sui_chess::chess_rules_tests {
     /// 4 | p  P |          4 | .  . |  <- white pawn removed
     /// 3 | .  . |          3 | .  p |  <- black lands on e3
     fun test_black_pawn_en_passant() {
-        let mut board = chess_board::empty_with_ep(E);
+        let mut board = chess_board::empty_with_ep(E());
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
+            sq(E(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::black(),
-            sq(D, 4),
-            sq(E, 3),
+            BLACK(),
+            sq(D(), 4),
+            sq(E(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 3)).borrow();
-        assert!(piece.kind() == chess_board::pawn_type());
-        assert!(piece.color() == chess_board::black());
-        assert!(new_board.is_empty(sq(E, 4)));
+        let piece = new_board.piece_at(sq(E(), 3)).borrow();
+        assert!(piece.kind() == PAWN());
+        assert!(piece.color() == BLACK());
+        assert!(new_board.is_empty(sq(E(), 4)));
     }
 
     // --- Promotion ---
@@ -652,36 +666,36 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 7),
+            sq(E(), 7),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 7),
-            sq(E, 8),
-            chess_board::queen_type(),
+            WHITE(),
+            sq(E(), 7),
+            sq(E(), 8),
+            QUEEN(),
         );
-        let piece = new_board.piece_at(sq(E, 8)).borrow();
-        assert!(piece.kind() == chess_board::queen_type());
-        assert!(piece.color() == chess_board::white());
+        let piece = new_board.piece_at(sq(E(), 8)).borrow();
+        assert!(piece.kind() == QUEEN());
+        assert!(piece.color() == WHITE());
     }
 
     #[test]
@@ -695,36 +709,36 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 2),
+            sq(D(), 2),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::black(),
-            sq(D, 2),
-            sq(D, 1),
-            chess_board::queen_type(),
+            BLACK(),
+            sq(D(), 2),
+            sq(D(), 1),
+            QUEEN(),
         );
-        let piece = new_board.piece_at(sq(D, 1)).borrow();
-        assert!(piece.kind() == chess_board::queen_type());
-        assert!(piece.color() == chess_board::black());
+        let piece = new_board.piece_at(sq(D(), 1)).borrow();
+        assert!(piece.kind() == QUEEN());
+        assert!(piece.color() == BLACK());
     }
 
     // --- Promotion missing ---
@@ -741,27 +755,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 7),
+            sq(E(), 7),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 7), sq(E, 8), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 7), sq(E(), 8), 0);
     }
 
     #[test]
@@ -776,27 +790,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 2),
+            sq(D(), 2),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::black(),
+                    PAWN(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 2), sq(D, 1), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 2), sq(D(), 1), 0);
     }
 
     // ===== Knight tests =====
@@ -813,14 +827,14 @@ module sui_chess::chess_rules_tests {
     /// 2 | .  x  .  x  . |
     fun test_knight_all_l_shapes() {
         let destinations = vector[
-            sq(C, 6),
-            sq(E, 6),
-            sq(B, 5),
-            sq(F, 5),
-            sq(B, 3),
-            sq(F, 3),
-            sq(C, 2),
-            sq(E, 2),
+            sq(C(), 6),
+            sq(E(), 6),
+            sq(B(), 5),
+            sq(F(), 5),
+            sq(B(), 3),
+            sq(F(), 3),
+            sq(C(), 2),
+            sq(E(), 2),
         ];
 
         let mut i: u64 = 0;
@@ -828,40 +842,40 @@ module sui_chess::chess_rules_tests {
             let mut board = chess_board::empty();
             chess_board::set_piece(
                 &mut board,
-                sq(A, 1),
+                sq(A(), 1),
                 option::some(
-                    chess_board::new_piece(chess_board::king_type(), chess_board::white()),
+                    chess_board::new_piece(KING(), WHITE()),
                 ),
             );
             chess_board::set_piece(
                 &mut board,
-                sq(D, 4),
+                sq(D(), 4),
                 option::some(
                     chess_board::new_piece_with_flags(
-                        chess_board::knight_type(),
-                        chess_board::white(),
+                        KNIGHT(),
+                        WHITE(),
                         true,
                     ),
                 ),
             );
             chess_board::set_piece(
                 &mut board,
-                sq(H, 8),
+                sq(H(), 8),
                 option::some(
-                    chess_board::new_piece(chess_board::king_type(), chess_board::black()),
+                    chess_board::new_piece(KING(), BLACK()),
                 ),
             );
 
             let dest = *destinations.borrow(i);
             let new_board = chess_rules::validate_and_apply_move(
                 &board,
-                chess_board::white(),
-                sq(D, 4),
+                WHITE(),
+                sq(D(), 4),
                 dest,
                 0,
             );
             let piece = new_board.piece_at(dest).borrow();
-            assert!(piece.kind() == chess_board::knight_type());
+            assert!(piece.kind() == KNIGHT());
             i = i + 1;
         };
     }
@@ -879,27 +893,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::knight_type(),
-                    chess_board::white(),
+                    KNIGHT(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(D(), 6), 0);
     }
 
     #[test]
@@ -914,13 +928,13 @@ module sui_chess::chess_rules_tests {
         let board = chess_board::new();
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(B, 1),
-            sq(C, 3),
+            WHITE(),
+            sq(B(), 1),
+            sq(C(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(C, 3)).borrow();
-        assert!(piece.kind() == chess_board::knight_type());
+        let piece = new_board.piece_at(sq(C(), 3)).borrow();
+        assert!(piece.kind() == KNIGHT());
     }
 
     // ===== Bishop tests =====
@@ -937,29 +951,29 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 1),
-            option::some(chess_board::new_piece(chess_board::bishop_type(), chess_board::white())),
+            sq(C(), 1),
+            option::some(chess_board::new_piece(BISHOP(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(C, 1),
-            sq(E, 3),
+            WHITE(),
+            sq(C(), 1),
+            sq(E(), 3),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 3)).borrow();
-        assert!(piece.kind() == chess_board::bishop_type());
+        let piece = new_board.piece_at(sq(E(), 3)).borrow();
+        assert!(piece.kind() == BISHOP());
     }
 
     #[test]
@@ -975,21 +989,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 1),
-            option::some(chess_board::new_piece(chess_board::bishop_type(), chess_board::white())),
+            sq(C(), 1),
+            option::some(chess_board::new_piece(BISHOP(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(C, 1), sq(C, 3), 0);
+        board.validate_and_apply_move(WHITE(), sq(C(), 1), sq(C(), 3), 0);
     }
 
     #[test]
@@ -1005,26 +1019,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 1),
-            option::some(chess_board::new_piece(chess_board::bishop_type(), chess_board::white())),
+            sq(C(), 1),
+            option::some(chess_board::new_piece(BISHOP(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 2),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 2),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(C, 1), sq(E, 3), 0);
+        board.validate_and_apply_move(WHITE(), sq(C(), 1), sq(E(), 3), 0);
     }
 
     // ===== Rook tests =====
@@ -1039,29 +1053,29 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(A, 1),
-            sq(D, 1),
+            WHITE(),
+            sq(A(), 1),
+            sq(D(), 1),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 1)).borrow();
-        assert!(piece.kind() == chess_board::rook_type());
+        let piece = new_board.piece_at(sq(D(), 1)).borrow();
+        assert!(piece.kind() == ROOK());
     }
 
     #[test]
@@ -1078,29 +1092,29 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(A, 1),
-            sq(A, 5),
+            WHITE(),
+            sq(A(), 1),
+            sq(A(), 5),
             0,
         );
-        let piece = new_board.piece_at(sq(A, 5)).borrow();
-        assert!(piece.kind() == chess_board::rook_type());
+        let piece = new_board.piece_at(sq(A(), 5)).borrow();
+        assert!(piece.kind() == ROOK());
     }
 
     #[test]
@@ -1118,26 +1132,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 3),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(A(), 3),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(A, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(A(), 1), sq(A(), 5), 0);
     }
 
     // ===== Queen tests =====
@@ -1155,39 +1169,39 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 1),
-            option::some(chess_board::new_piece(chess_board::queen_type(), chess_board::white())),
+            sq(D(), 1),
+            option::some(chess_board::new_piece(QUEEN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(D, 1),
-            sq(D, 4),
+            WHITE(),
+            sq(D(), 1),
+            sq(D(), 4),
             0,
         );
-        let piece = new_board.piece_at(sq(D, 4)).borrow();
-        assert!(piece.kind() == chess_board::queen_type());
+        let piece = new_board.piece_at(sq(D(), 4)).borrow();
+        assert!(piece.kind() == QUEEN());
 
         let new_board2 = chess_rules::validate_and_apply_move(
             &new_board,
-            chess_board::white(),
-            sq(D, 4),
-            sq(G, 7),
+            WHITE(),
+            sq(D(), 4),
+            sq(G(), 7),
             0,
         );
-        let piece2 = chess_board::piece_at(&new_board2, sq(G, 7)).borrow();
-        assert!(piece2.kind() == chess_board::queen_type());
+        let piece2 = chess_board::piece_at(&new_board2, sq(G(), 7)).borrow();
+        assert!(piece2.kind() == QUEEN());
     }
 
     #[test]
@@ -1203,21 +1217,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 1),
-            option::some(chess_board::new_piece(chess_board::queen_type(), chess_board::white())),
+            sq(D(), 1),
+            option::some(chess_board::new_piece(QUEEN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 1), sq(E, 3), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 1), sq(E(), 3), 0);
     }
 
     // ===== King tests =====
@@ -1233,24 +1247,24 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 1),
-            sq(E, 2),
+            WHITE(),
+            sq(E(), 1),
+            sq(E(), 2),
             0,
         );
-        let piece = new_board.piece_at(sq(E, 2)).borrow();
-        assert!(piece.kind() == chess_board::king_type());
+        let piece = new_board.piece_at(sq(E(), 2)).borrow();
+        assert!(piece.kind() == KING());
     }
 
     #[test]
@@ -1264,16 +1278,16 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 1), sq(G(), 1), 0);
     }
 
     // ===== Castling tests =====
@@ -1288,31 +1302,31 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(H(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 1),
-            sq(G, 1),
+            WHITE(),
+            sq(E(), 1),
+            sq(G(), 1),
             0,
         );
-        let k = new_board.piece_at(sq(G, 1)).borrow();
-        assert!(k.kind() == chess_board::king_type());
-        let r = new_board.piece_at(sq(F, 1)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
+        let k = new_board.piece_at(sq(G(), 1)).borrow();
+        assert!(k.kind() == KING());
+        let r = new_board.piece_at(sq(F(), 1)).borrow();
+        assert!(r.kind() == ROOK());
     }
 
     #[test]
@@ -1325,31 +1339,31 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 1),
-            sq(C, 1),
+            WHITE(),
+            sq(E(), 1),
+            sq(C(), 1),
             0,
         );
-        let k = new_board.piece_at(sq(C, 1)).borrow();
-        assert!(k.kind() == chess_board::king_type());
-        let r = new_board.piece_at(sq(D, 1)).borrow();
-        assert!(r.kind() == chess_board::rook_type());
+        let k = new_board.piece_at(sq(C(), 1)).borrow();
+        assert!(k.kind() == KING());
+        let r = new_board.piece_at(sq(D(), 1)).borrow();
+        assert!(r.kind() == ROOK());
     }
 
     #[test]
@@ -1363,27 +1377,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
+            sq(E(), 1),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::king_type(),
-                    chess_board::white(),
+                    KING(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(H(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 1), sq(G(), 1), 0);
     }
 
     #[test]
@@ -1397,26 +1411,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(F, 1),
-            option::some(chess_board::new_piece(chess_board::bishop_type(), chess_board::white())),
+            sq(F(), 1),
+            option::some(chess_board::new_piece(BISHOP(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(H(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 1), sq(G(), 1), 0);
     }
 
     #[test]
@@ -1433,26 +1447,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(H(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(F, 8),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(F(), 8),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(A(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 1), sq(G(), 1), 0);
     }
 
     // ===== Check detection tests =====
@@ -1467,21 +1481,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        assert!(board.is_in_check(chess_board::white()));
+        assert!(board.is_in_check(WHITE()));
     }
 
     #[test]
@@ -1494,16 +1508,16 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        assert!(!board.is_in_check(chess_board::white()));
+        assert!(!board.is_in_check(WHITE()));
     }
 
     #[test]
@@ -1519,21 +1533,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(B, 8),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(B(), 8),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(B, 1), 0);
+        board.validate_and_apply_move(WHITE(), sq(A(), 1), sq(B(), 1), 0);
     }
 
     // ===== Pin test =====
@@ -1550,32 +1564,32 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 4),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 4),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 4),
+            sq(C(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::bishop_type(),
-                    chess_board::white(),
+                    BISHOP(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::black())),
+            sq(E(), 4),
+            option::some(chess_board::new_piece(ROOK(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(C, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(C(), 4), sq(D(), 5), 0);
     }
 
     // ===== Checkmate tests =====
@@ -1598,55 +1612,55 @@ module sui_chess::chess_rules_tests {
         let board = chess_board::new();
         let b1 = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(E, 2),
-            sq(E, 4),
+            WHITE(),
+            sq(E(), 2),
+            sq(E(), 4),
             0,
         );
         let b2 = chess_rules::validate_and_apply_move(
             &b1,
-            chess_board::black(),
-            sq(E, 7),
-            sq(E, 5),
+            BLACK(),
+            sq(E(), 7),
+            sq(E(), 5),
             0,
         );
         let b3 = chess_rules::validate_and_apply_move(
             &b2,
-            chess_board::white(),
-            sq(F, 1),
-            sq(C, 4),
+            WHITE(),
+            sq(F(), 1),
+            sq(C(), 4),
             0,
         );
         let b4 = chess_rules::validate_and_apply_move(
             &b3,
-            chess_board::black(),
-            sq(B, 8),
-            sq(C, 6),
+            BLACK(),
+            sq(B(), 8),
+            sq(C(), 6),
             0,
         );
         let b5 = chess_rules::validate_and_apply_move(
             &b4,
-            chess_board::white(),
-            sq(D, 1),
-            sq(H, 5),
+            WHITE(),
+            sq(D(), 1),
+            sq(H(), 5),
             0,
         );
         let b6 = chess_rules::validate_and_apply_move(
             &b5,
-            chess_board::black(),
-            sq(G, 8),
-            sq(F, 6),
+            BLACK(),
+            sq(G(), 8),
+            sq(F(), 6),
             0,
         );
         let b7 = chess_rules::validate_and_apply_move(
             &b6,
-            chess_board::white(),
-            sq(H, 5),
-            sq(F, 7),
+            WHITE(),
+            sq(H(), 5),
+            sq(F(), 7),
             0,
         );
 
-        assert!(b7.is_checkmate(chess_board::black()));
+        assert!(b7.is_checkmate(BLACK()));
     }
 
     #[test]
@@ -1662,49 +1676,49 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(B, 8),
+            sq(B(), 8),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::king_type(),
-                    chess_board::black(),
+                    KING(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(A(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(B, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(B(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(C(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(D(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
 
         let new_board = chess_rules::validate_and_apply_move(
             &board,
-            chess_board::white(),
-            sq(D, 1),
-            sq(D, 8),
+            WHITE(),
+            sq(D(), 1),
+            sq(D(), 8),
             0,
         );
-        assert!(new_board.is_checkmate(chess_board::black()));
+        assert!(new_board.is_checkmate(BLACK()));
     }
 
     // ===== Stalemate test =====
@@ -1722,34 +1736,34 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 8),
+            sq(A(), 8),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::king_type(),
-                    chess_board::black(),
+                    KING(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(B, 6),
-            option::some(chess_board::new_piece(chess_board::queen_type(), chess_board::white())),
+            sq(B(), 6),
+            option::some(chess_board::new_piece(QUEEN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(C, 8),
+            sq(C(), 8),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::king_type(),
-                    chess_board::white(),
+                    KING(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
 
-        assert!(!board.is_in_check(chess_board::black()));
-        assert!(board.is_stalemate(chess_board::black()));
+        assert!(!board.is_in_check(BLACK()));
+        assert!(board.is_stalemate(BLACK()));
     }
 
     // ===== Own-piece capture test =====
@@ -1767,26 +1781,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 3),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::white())),
+            sq(A(), 3),
+            option::some(chess_board::new_piece(PAWN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(A, 3), 0);
+        board.validate_and_apply_move(WHITE(), sq(A(), 1), sq(A(), 3), 0);
     }
 
     // ===== Rook illegal diagonal =====
@@ -1804,21 +1818,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(E, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(E(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::rook_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(ROOK(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(C, 3), 0);
+        board.validate_and_apply_move(WHITE(), sq(A(), 1), sq(C(), 3), 0);
     }
 
     // ===== Invalid shape tests =====
@@ -1830,27 +1844,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::bishop_type(),
-                    chess_board::white(),
+                    BISHOP(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(E, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(E(), 6), 0);
     }
 
     #[test]
@@ -1860,27 +1874,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::rook_type(),
-                    chess_board::white(),
+                    ROOK(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(E, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(E(), 6), 0);
     }
 
     #[test]
@@ -1894,27 +1908,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(E, 4),
+            sq(E(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::pawn_type(),
-                    chess_board::white(),
+                    PAWN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(E, 4), sq(F, 4), 0);
+        board.validate_and_apply_move(WHITE(), sq(E(), 4), sq(F(), 4), 0);
     }
 
     // ===== Smoke tests =====
@@ -1929,21 +1943,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 2),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::white())),
+            sq(D(), 2),
+            option::some(chess_board::new_piece(PAWN(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 2), sq(G, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 2), sq(G(), 5), 0);
     }
 
     #[test]
@@ -1953,21 +1967,21 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 7),
-            option::some(chess_board::new_piece(chess_board::pawn_type(), chess_board::black())),
+            sq(D(), 7),
+            option::some(chess_board::new_piece(PAWN(), BLACK())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::black(), sq(D, 7), sq(A, 4), 0);
+        board.validate_and_apply_move(BLACK(), sq(D(), 7), sq(A(), 4), 0);
     }
 
     #[test]
@@ -1977,27 +1991,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::knight_type(),
-                    chess_board::white(),
+                    KNIGHT(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(G, 7), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(G(), 7), 0);
     }
 
     #[test]
@@ -2007,27 +2021,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::bishop_type(),
-                    chess_board::white(),
+                    BISHOP(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(G, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(G(), 6), 0);
     }
 
     #[test]
@@ -2037,27 +2051,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::rook_type(),
-                    chess_board::white(),
+                    ROOK(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(F(), 6), 0);
     }
 
     #[test]
@@ -2067,27 +2081,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::queen_type(),
-                    chess_board::white(),
+                    QUEEN(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 7), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(F(), 7), 0);
     }
 
     #[test]
@@ -2097,22 +2111,22 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::king_type(),
-                    chess_board::white(),
+                    KING(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(F(), 6), 0);
     }
 
     // ===== Edge case tests =====
@@ -2124,27 +2138,27 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::rook_type(),
-                    chess_board::white(),
+                    ROOK(),
+                    WHITE(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 4), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(D(), 4), 0);
     }
 
     #[test]
@@ -2154,16 +2168,16 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(D(), 5), 0);
     }
 
     #[test]
@@ -2173,26 +2187,26 @@ module sui_chess::chess_rules_tests {
         let mut board = chess_board::empty();
         chess_board::set_piece(
             &mut board,
-            sq(A, 1),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::white())),
+            sq(A(), 1),
+            option::some(chess_board::new_piece(KING(), WHITE())),
         );
         chess_board::set_piece(
             &mut board,
-            sq(D, 4),
+            sq(D(), 4),
             option::some(
                 chess_board::new_piece_with_flags(
-                    chess_board::rook_type(),
-                    chess_board::black(),
+                    ROOK(),
+                    BLACK(),
                     true,
                 ),
             ),
         );
         chess_board::set_piece(
             &mut board,
-            sq(H, 8),
-            option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
+            sq(H(), 8),
+            option::some(chess_board::new_piece(KING(), BLACK())),
         );
 
-        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 6), 0);
+        board.validate_and_apply_move(WHITE(), sq(D(), 4), sq(D(), 6), 0);
     }
 }
