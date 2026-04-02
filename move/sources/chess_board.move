@@ -8,6 +8,16 @@
 /// from chess notation: `sq(E, 2)` returns the position for square e2.
 #[allow(unused_const)]
 module sui_chess::chess_board {
+    // Method aliases for Piece accessors (readable as piece.kind(), piece.color()).
+    public use fun piece_kind as Piece.kind;
+    public use fun piece_color as Piece.color;
+
+    // Register chess_rules functions as methods on Board.
+    public use fun sui_chess::chess_rules::validate_and_apply_move as Board.validate_and_apply_move;
+    public use fun sui_chess::chess_rules::is_in_check as Board.is_in_check;
+    public use fun sui_chess::chess_rules::is_checkmate as Board.is_checkmate;
+    public use fun sui_chess::chess_rules::is_stalemate as Board.is_stalemate;
+
     // ===== Constants: piece types =====
 
     const PAWN: u8 = 1;
@@ -93,9 +103,9 @@ module sui_chess::chess_board {
 
     // ===== Piece accessors =====
 
-    public fun piece_type(piece: &Piece): u8 { piece.piece_type }
+    public fun piece_kind(piece: &Piece): u8 { piece.piece_type }
 
-    public fun color(piece: &Piece): u8 { piece.color }
+    public fun piece_color(piece: &Piece): u8 { piece.color }
 
     public fun has_moved(piece: &Piece): bool { piece.has_moved }
 

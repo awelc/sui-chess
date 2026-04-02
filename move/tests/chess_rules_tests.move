@@ -36,9 +36,9 @@ module sui_chess::chess_rules_tests {
             sq(E, 3),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 3)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::is_empty(&new_board, sq(E, 2)));
+        let piece = new_board.piece_at(sq(E, 3)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(new_board.is_empty(sq(E, 2)));
     }
 
     #[test]
@@ -73,9 +73,9 @@ module sui_chess::chess_rules_tests {
             sq(D, 6),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 6)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::black());
+        let piece = new_board.piece_at(sq(D, 6)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::black());
     }
 
     // --- Forward two ---
@@ -97,8 +97,8 @@ module sui_chess::chess_rules_tests {
             sq(E, 4),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 4)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
+        let piece = new_board.piece_at(sq(E, 4)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
     }
 
     #[test]
@@ -134,9 +134,9 @@ module sui_chess::chess_rules_tests {
             sq(D, 5),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 5)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::black());
+        let piece = new_board.piece_at(sq(D, 5)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::black());
     }
 
     // --- Forward two blocked ---
@@ -173,7 +173,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 2), sq(E, 4), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 2), sq(E, 4), 0);
     }
 
     #[test]
@@ -208,7 +208,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 7), sq(D, 5), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 7), sq(D, 5), 0);
     }
 
     // --- Forward two already moved ---
@@ -246,7 +246,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 3), sq(E, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 3), sq(E, 5), 0);
     }
 
     #[test]
@@ -282,7 +282,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 6), sq(D, 4), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 6), sq(D, 4), 0);
     }
 
     // --- Backward ---
@@ -319,7 +319,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 3), sq(E, 2), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 3), sq(E, 2), 0);
     }
 
     #[test]
@@ -354,7 +354,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 6), sq(D, 7), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 6), sq(D, 7), 0);
     }
 
     // --- Diagonal capture ---
@@ -402,9 +402,9 @@ module sui_chess::chess_rules_tests {
             sq(D, 5),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 5)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::white());
+        let piece = new_board.piece_at(sq(D, 5)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::white());
     }
 
     #[test]
@@ -450,9 +450,9 @@ module sui_chess::chess_rules_tests {
             sq(E, 4),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 4)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::black());
+        let piece = new_board.piece_at(sq(E, 4)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::black());
     }
 
     // --- Diagonal to empty ---
@@ -489,7 +489,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 4), sq(D, 5), 0);
     }
 
     #[test]
@@ -524,7 +524,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 5), sq(E, 4), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 5), sq(E, 4), 0);
     }
 
     // --- En-passant ---
@@ -578,10 +578,10 @@ module sui_chess::chess_rules_tests {
             sq(D, 6),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 6)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::white());
-        assert!(chess_board::is_empty(&new_board, sq(D, 5)));
+        let piece = new_board.piece_at(sq(D, 6)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::white());
+        assert!(new_board.is_empty(sq(D, 5)));
     }
 
     #[test]
@@ -633,10 +633,10 @@ module sui_chess::chess_rules_tests {
             sq(E, 3),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 3)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::pawn_type());
-        assert!(chess_board::color(piece) == chess_board::black());
-        assert!(chess_board::is_empty(&new_board, sq(E, 4)));
+        let piece = new_board.piece_at(sq(E, 3)).borrow();
+        assert!(piece.kind() == chess_board::pawn_type());
+        assert!(piece.color() == chess_board::black());
+        assert!(new_board.is_empty(sq(E, 4)));
     }
 
     // --- Promotion ---
@@ -679,9 +679,9 @@ module sui_chess::chess_rules_tests {
             sq(E, 8),
             chess_board::queen_type(),
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 8)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::queen_type());
-        assert!(chess_board::color(piece) == chess_board::white());
+        let piece = new_board.piece_at(sq(E, 8)).borrow();
+        assert!(piece.kind() == chess_board::queen_type());
+        assert!(piece.color() == chess_board::white());
     }
 
     #[test]
@@ -722,9 +722,9 @@ module sui_chess::chess_rules_tests {
             sq(D, 1),
             chess_board::queen_type(),
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 1)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::queen_type());
-        assert!(chess_board::color(piece) == chess_board::black());
+        let piece = new_board.piece_at(sq(D, 1)).borrow();
+        assert!(piece.kind() == chess_board::queen_type());
+        assert!(piece.color() == chess_board::black());
     }
 
     // --- Promotion missing ---
@@ -761,7 +761,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 7), sq(E, 8), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 7), sq(E, 8), 0);
     }
 
     #[test]
@@ -796,7 +796,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 2), sq(D, 1), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 2), sq(D, 1), 0);
     }
 
     // ===== Knight tests =====
@@ -860,8 +860,8 @@ module sui_chess::chess_rules_tests {
                 dest,
                 0,
             );
-            let piece = chess_board::piece_at(&new_board, dest).borrow();
-            assert!(chess_board::piece_type(piece) == chess_board::knight_type());
+            let piece = new_board.piece_at(dest).borrow();
+            assert!(piece.kind() == chess_board::knight_type());
             i = i + 1;
         };
     }
@@ -899,7 +899,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(D, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 6), 0);
     }
 
     #[test]
@@ -919,8 +919,8 @@ module sui_chess::chess_rules_tests {
             sq(C, 3),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(C, 3)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::knight_type());
+        let piece = new_board.piece_at(sq(C, 3)).borrow();
+        assert!(piece.kind() == chess_board::knight_type());
     }
 
     // ===== Bishop tests =====
@@ -958,8 +958,8 @@ module sui_chess::chess_rules_tests {
             sq(E, 3),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 3)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::bishop_type());
+        let piece = new_board.piece_at(sq(E, 3)).borrow();
+        assert!(piece.kind() == chess_board::bishop_type());
     }
 
     #[test]
@@ -989,7 +989,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(C, 1), sq(C, 3), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(C, 1), sq(C, 3), 0);
     }
 
     #[test]
@@ -1024,7 +1024,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(C, 1), sq(E, 3), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(C, 1), sq(E, 3), 0);
     }
 
     // ===== Rook tests =====
@@ -1060,8 +1060,8 @@ module sui_chess::chess_rules_tests {
             sq(D, 1),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 1)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::rook_type());
+        let piece = new_board.piece_at(sq(D, 1)).borrow();
+        assert!(piece.kind() == chess_board::rook_type());
     }
 
     #[test]
@@ -1099,8 +1099,8 @@ module sui_chess::chess_rules_tests {
             sq(A, 5),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(A, 5)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::rook_type());
+        let piece = new_board.piece_at(sq(A, 5)).borrow();
+        assert!(piece.kind() == chess_board::rook_type());
     }
 
     #[test]
@@ -1137,7 +1137,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(A, 1), sq(A, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(A, 5), 0);
     }
 
     // ===== Queen tests =====
@@ -1176,8 +1176,8 @@ module sui_chess::chess_rules_tests {
             sq(D, 4),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(D, 4)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::queen_type());
+        let piece = new_board.piece_at(sq(D, 4)).borrow();
+        assert!(piece.kind() == chess_board::queen_type());
 
         let new_board2 = chess_rules::validate_and_apply_move(
             &new_board,
@@ -1187,7 +1187,7 @@ module sui_chess::chess_rules_tests {
             0,
         );
         let piece2 = chess_board::piece_at(&new_board2, sq(G, 7)).borrow();
-        assert!(chess_board::piece_type(piece2) == chess_board::queen_type());
+        assert!(piece2.kind() == chess_board::queen_type());
     }
 
     #[test]
@@ -1217,7 +1217,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 1), sq(E, 3), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 1), sq(E, 3), 0);
     }
 
     // ===== King tests =====
@@ -1249,8 +1249,8 @@ module sui_chess::chess_rules_tests {
             sq(E, 2),
             0,
         );
-        let piece = chess_board::piece_at(&new_board, sq(E, 2)).borrow();
-        assert!(chess_board::piece_type(piece) == chess_board::king_type());
+        let piece = new_board.piece_at(sq(E, 2)).borrow();
+        assert!(piece.kind() == chess_board::king_type());
     }
 
     #[test]
@@ -1273,7 +1273,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
     }
 
     // ===== Castling tests =====
@@ -1309,10 +1309,10 @@ module sui_chess::chess_rules_tests {
             sq(G, 1),
             0,
         );
-        let k = chess_board::piece_at(&new_board, sq(G, 1)).borrow();
-        assert!(chess_board::piece_type(k) == chess_board::king_type());
-        let r = chess_board::piece_at(&new_board, sq(F, 1)).borrow();
-        assert!(chess_board::piece_type(r) == chess_board::rook_type());
+        let k = new_board.piece_at(sq(G, 1)).borrow();
+        assert!(k.kind() == chess_board::king_type());
+        let r = new_board.piece_at(sq(F, 1)).borrow();
+        assert!(r.kind() == chess_board::rook_type());
     }
 
     #[test]
@@ -1346,10 +1346,10 @@ module sui_chess::chess_rules_tests {
             sq(C, 1),
             0,
         );
-        let k = chess_board::piece_at(&new_board, sq(C, 1)).borrow();
-        assert!(chess_board::piece_type(k) == chess_board::king_type());
-        let r = chess_board::piece_at(&new_board, sq(D, 1)).borrow();
-        assert!(chess_board::piece_type(r) == chess_board::rook_type());
+        let k = new_board.piece_at(sq(C, 1)).borrow();
+        assert!(k.kind() == chess_board::king_type());
+        let r = new_board.piece_at(sq(D, 1)).borrow();
+        assert!(r.kind() == chess_board::rook_type());
     }
 
     #[test]
@@ -1383,7 +1383,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
     }
 
     #[test]
@@ -1416,7 +1416,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
     }
 
     #[test]
@@ -1452,7 +1452,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 1), sq(G, 1), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 1), sq(G, 1), 0);
     }
 
     // ===== Check detection tests =====
@@ -1481,7 +1481,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        assert!(chess_rules::is_in_check(&board, chess_board::white()));
+        assert!(board.is_in_check(chess_board::white()));
     }
 
     #[test]
@@ -1503,7 +1503,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        assert!(!chess_rules::is_in_check(&board, chess_board::white()));
+        assert!(!board.is_in_check(chess_board::white()));
     }
 
     #[test]
@@ -1533,7 +1533,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(A, 1), sq(B, 1), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(B, 1), 0);
     }
 
     // ===== Pin test =====
@@ -1575,7 +1575,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(C, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(C, 4), sq(D, 5), 0);
     }
 
     // ===== Checkmate tests =====
@@ -1646,7 +1646,7 @@ module sui_chess::chess_rules_tests {
             0,
         );
 
-        assert!(chess_rules::is_checkmate(&b7, chess_board::black()));
+        assert!(b7.is_checkmate(chess_board::black()));
     }
 
     #[test]
@@ -1704,7 +1704,7 @@ module sui_chess::chess_rules_tests {
             sq(D, 8),
             0,
         );
-        assert!(chess_rules::is_checkmate(&new_board, chess_board::black()));
+        assert!(new_board.is_checkmate(chess_board::black()));
     }
 
     // ===== Stalemate test =====
@@ -1748,8 +1748,8 @@ module sui_chess::chess_rules_tests {
             ),
         );
 
-        assert!(!chess_rules::is_in_check(&board, chess_board::black()));
-        assert!(chess_rules::is_stalemate(&board, chess_board::black()));
+        assert!(!board.is_in_check(chess_board::black()));
+        assert!(board.is_stalemate(chess_board::black()));
     }
 
     // ===== Own-piece capture test =====
@@ -1786,7 +1786,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(A, 1), sq(A, 3), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(A, 3), 0);
     }
 
     // ===== Rook illegal diagonal =====
@@ -1818,7 +1818,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(A, 1), sq(C, 3), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(A, 1), sq(C, 3), 0);
     }
 
     // ===== Invalid shape tests =====
@@ -1850,7 +1850,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(E, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(E, 6), 0);
     }
 
     #[test]
@@ -1880,7 +1880,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(E, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(E, 6), 0);
     }
 
     #[test]
@@ -1914,7 +1914,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(E, 4), sq(F, 4), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(E, 4), sq(F, 4), 0);
     }
 
     // ===== Smoke tests =====
@@ -1943,7 +1943,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 2), sq(G, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 2), sq(G, 5), 0);
     }
 
     #[test]
@@ -1967,7 +1967,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::black(), sq(D, 7), sq(A, 4), 0);
+        board.validate_and_apply_move(chess_board::black(), sq(D, 7), sq(A, 4), 0);
     }
 
     #[test]
@@ -1997,7 +1997,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(G, 7), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(G, 7), 0);
     }
 
     #[test]
@@ -2027,7 +2027,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(G, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(G, 6), 0);
     }
 
     #[test]
@@ -2057,7 +2057,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(F, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 6), 0);
     }
 
     #[test]
@@ -2087,7 +2087,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(F, 7), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 7), 0);
     }
 
     #[test]
@@ -2112,7 +2112,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(F, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(F, 6), 0);
     }
 
     // ===== Edge case tests =====
@@ -2144,7 +2144,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(D, 4), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 4), 0);
     }
 
     #[test]
@@ -2163,7 +2163,7 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(D, 5), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 5), 0);
     }
 
     #[test]
@@ -2193,6 +2193,6 @@ module sui_chess::chess_rules_tests {
             option::some(chess_board::new_piece(chess_board::king_type(), chess_board::black())),
         );
 
-        chess_rules::validate_and_apply_move(&board, chess_board::white(), sq(D, 4), sq(D, 6), 0);
+        board.validate_and_apply_move(chess_board::white(), sq(D, 4), sq(D, 6), 0);
     }
 }
