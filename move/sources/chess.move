@@ -2,30 +2,24 @@
 ///
 /// ## How a game is played
 ///
-/// 1. **White creates a game** (`create_game`), designating an opponent, paying a
-///    fixed entry fee in SUI, and locking a bet (wager) of any amount.
-/// 2. **Black joins** (`join_game`), paying the same entry fee and locking their
-///    own bet. Bets can differ — players may wager different amounts based on
-///    skill or confidence.
+/// 1. **White creates a game** (`create_game`), designating an opponent and
+///    locking a bet (wager) of any amount in SUI.
+/// 2. **Black joins** (`join_game`), locking their own bet. Bets can differ —
+///    players may wager different amounts based on skill or confidence.
 /// 3. **Players alternate moves** (`make_move`). Each move is validated on-chain
 ///    by `chess_rules` — illegal moves abort the transaction.
 /// 4. **Game ends** by checkmate (automatic after a move), resignation (`resign`),
 ///    stalemate (automatic), or mutual draw agreement (`offer_draw`).
 /// 5. **Bets are distributed**: the winner receives both bets. On a draw, each
 ///    player gets their own bet back.
-/// 6. **Entry fees** cover the cost of running the game (gas sponsorship in
-///    production). The remainder goes to the contract publisher as revenue,
-///    who can withdraw them after the game ends (`withdraw_fees`).
 ///
-/// The Game is a Sui shared object so both players can interact with it.
+/// Players pay gas fees for their own transactions. The Game is a Sui shared
+/// object so both players can interact with it.
 module sui_chess::chess {
     use sui::{balance::{Self, Balance}, coin::{Self, Coin}, event, sui::SUI};
     use sui_chess::chess_board::{Self, Board, Pos, WHITE, BLACK};
 
     // ===== Constants =====
-
-    /// Entry fee per player (1 SUI = 10^9 MIST).
-    const ENTRY_FEE_MIST: u64 = 1_000_000_000;
 
     // Game end reasons for GameEnded event.
     const REASON_CHECKMATE: u8 = 0;
@@ -36,8 +30,6 @@ module sui_chess::chess {
     // ===== Smart errors =====
 
     #[error]
-    const EInvalidEntryFee: vector<u8> = b"Entry fee must be exactly 1 SUI";
-    #[error]
     const EGameNotWaiting: vector<u8> = b"Game is not waiting for a player to join";
     #[error]
     const EGameNotActive: vector<u8> = b"Game is not active";
@@ -47,8 +39,6 @@ module sui_chess::chess {
     const ENotAPlayer: vector<u8> = b"You are not a player in this game";
     #[error]
     const EWrongOpponent: vector<u8> = b"You are not the designated opponent";
-    #[error]
-    const EGameNotOver: vector<u8> = b"Game is not over yet";
 
     // ===== Structs =====
 
@@ -63,8 +53,6 @@ module sui_chess::chess {
         moves: vector<MoveRecord>,
         white_bet: Balance<SUI>,
         black_bet: Balance<SUI>,
-        entry_fee_pool: Balance<SUI>,
-        publisher: address,
         white_draw_offer: bool,
         black_draw_offer: bool,
     }
@@ -74,11 +62,6 @@ module sui_chess::chess {
         from: Pos,
         to: Pos,
         promotion: u8,
-    }
-
-    /// Capability held by the contract publisher, used to withdraw entry fees.
-    public struct PublisherCap has key, store {
-        id: UID,
     }
 
     // ===== Events =====
@@ -119,33 +102,10 @@ module sui_chess::chess {
         player: address,
     }
 
-    // ===== Module initializer =====
+    // ===== Public functions =====
 
-    /// Called once when the package is published. Creates PublisherCap for the deployer.
-    fun init(ctx: &mut TxContext) {
-        transfer::transfer(
-            PublisherCap { id: object::new(ctx) },
-            ctx.sender(),
-        );
-    }
-
-    #[test_only]
-    /// Test-only version of init (since init is private and only called at publish time).
-    public fun init_for_testing(ctx: &mut TxContext) {
-        init(ctx);
-    }
-
-    // ===== Entry functions =====
-
-    /// White creates a new game, designating an opponent and locking entry fee + bet.
-    public fun create_game(
-        opponent: address,
-        entry_fee: Coin<SUI>,
-        bet: Coin<SUI>,
-        ctx: &mut TxContext,
-    ) {
-        assert!(entry_fee.value() == ENTRY_FEE_MIST, EInvalidEntryFee);
-
+    /// White creates a new game, designating an opponent and locking a bet.
+    public fun create_game(opponent: address, bet: Coin<SUI>, ctx: &mut TxContext) {
         let sender = ctx.sender();
         let game = Game {
             id: object::new(ctx),
@@ -157,8 +117,6 @@ module sui_chess::chess {
             moves: vector::empty(),
             white_bet: coin::into_balance(bet),
             black_bet: balance::zero(),
-            entry_fee_pool: coin::into_balance(entry_fee),
-            publisher: sender, // TODO: should be the package publisher, set in init
             white_draw_offer: false,
             black_draw_offer: false,
         };
@@ -173,19 +131,11 @@ module sui_chess::chess {
         transfer::share_object(game);
     }
 
-    /// Black joins an existing game, locking entry fee + bet.
-    public fun join_game(
-        game: &mut Game,
-        entry_fee: Coin<SUI>,
-        bet: Coin<SUI>,
-        ctx: &mut TxContext,
-    ) {
+    /// Black joins an existing game, locking a bet.
+    public fun join_game(game: &mut Game, bet: Coin<SUI>, ctx: &mut TxContext) {
         assert!(game.status == WAITING(), EGameNotWaiting);
         assert!(ctx.sender() == game.player_black, EWrongOpponent);
-        assert!(entry_fee.value() == ENTRY_FEE_MIST, EInvalidEntryFee);
 
-        // Add black's entry fee to the pool and store the bet.
-        balance::join(&mut game.entry_fee_pool, coin::into_balance(entry_fee));
         balance::join(&mut game.black_bet, coin::into_balance(bet));
         game.status = ACTIVE();
 
@@ -229,9 +179,7 @@ module sui_chess::chess {
         game.moves.push_back(MoveRecord { from, to, promotion });
 
         // Toggle turn.
-        game.current_turn = if (player == WHITE()) { BLACK() } else {
-            WHITE()
-        };
+        game.current_turn = if (player == WHITE()) { BLACK() } else { WHITE() };
 
         // Clear the mover's draw offer (making a move implicitly retracts it).
         if (player == WHITE()) {
@@ -241,7 +189,7 @@ module sui_chess::chess {
         };
 
         // Check for game-ending conditions.
-        let opponent = game.current_turn; // After toggle, current_turn is the opponent.
+        let opponent = game.current_turn;
         let is_check = game.board.is_in_check(opponent);
         let is_checkmate = is_check && game.board.is_checkmate(opponent);
         let is_stalemate = !is_check && game.board.is_stalemate(opponent);
@@ -314,7 +262,6 @@ module sui_chess::chess {
             abort ENotAPlayer
         };
 
-        // If both players have offered a draw, resolve as draw.
         if (game.white_draw_offer && game.black_draw_offer) {
             game.status = DRAW();
             resolve_game(game, ctx);
@@ -331,37 +278,24 @@ module sui_chess::chess {
         };
     }
 
-    /// Publisher withdraws accumulated entry fees from a finished game.
-    #[allow(lint(self_transfer))]
-    public fun withdraw_fees(_cap: &PublisherCap, game: &mut Game, ctx: &mut TxContext) {
-        assert!(game.status >= WHITE_WINS(), EGameNotOver);
-
-        let fees = balance::withdraw_all(&mut game.entry_fee_pool);
-        let coin = coin::from_balance(fees, ctx);
-        transfer::public_transfer(coin, ctx.sender());
-    }
-
     // ===== Internal helpers =====
 
     /// Distribute bets based on game result.
     /// Winner gets both bets. Draw returns each bet to its owner.
     fun resolve_game(game: &mut Game, ctx: &mut TxContext) {
         if (game.status == WHITE_WINS()) {
-            // White wins: merge both bets and send to white.
             let black_bet = balance::withdraw_all(&mut game.black_bet);
             balance::join(&mut game.white_bet, black_bet);
             let winnings = balance::withdraw_all(&mut game.white_bet);
             let coin = coin::from_balance(winnings, ctx);
             transfer::public_transfer(coin, game.player_white);
         } else if (game.status == BLACK_WINS()) {
-            // Black wins: merge both bets and send to black.
             let white_bet = balance::withdraw_all(&mut game.white_bet);
             balance::join(&mut game.black_bet, white_bet);
             let winnings = balance::withdraw_all(&mut game.black_bet);
             let coin = coin::from_balance(winnings, ctx);
             transfer::public_transfer(coin, game.player_black);
         } else if (game.status == DRAW()) {
-            // Draw: return each bet to its owner.
             let white_bet = balance::withdraw_all(&mut game.white_bet);
             if (balance::value(&white_bet) > 0) {
                 let coin = coin::from_balance(white_bet, ctx);
@@ -391,8 +325,6 @@ module sui_chess::chess {
     public fun white_bet_value(game: &Game): u64 { balance::value(&game.white_bet) }
 
     public fun black_bet_value(game: &Game): u64 { balance::value(&game.black_bet) }
-
-    public fun fee_pool_value(game: &Game): u64 { balance::value(&game.entry_fee_pool) }
 
     public fun move_count(game: &Game): u64 { game.moves.length() }
 
