@@ -1,3 +1,6 @@
 [package]
 name = "sui_chess"
 edition = "2024"
+
+[environments]
+devnet = "f754f647"
