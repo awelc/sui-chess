@@ -1,0 +1,33 @@
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+main {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.address {
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.hint {
+  margin-top: 20px;
+  color: var(--text);
+}
