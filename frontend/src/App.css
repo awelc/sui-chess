@@ -17,6 +17,53 @@ header h1 {
   margin: 0;
 }
 
+.wallet-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.wallet-menu {
+  position: relative;
+}
+
+.wallet-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  min-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.wallet-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  text-align: left;
+  border: none;
+  background: none;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.wallet-dropdown-item:hover {
+  background: var(--code-bg);
+}
+
+.wallet-dropdown-item + .wallet-dropdown-item {
+  border-top: 1px solid var(--border);
+}
+
 main {
   padding: 40px 0;
   text-align: center;
@@ -30,4 +77,68 @@ main {
 .hint {
   margin-top: 20px;
   color: var(--text);
+}
+
+.game-setup {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  text-align: left;
+}
+
+.setup-form {
+  flex: 1;
+  max-width: 340px;
+}
+
+.setup-form h2 {
+  margin-top: 0;
+}
+
+.setup-form label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.setup-form input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  font-size: 14px;
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-h);
+  box-sizing: border-box;
+}
+
+.setup-form button {
+  margin-top: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.setup-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  margin-top: 8px;
+  color: #e53e3e;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.game-view {
+  text-align: center;
 }
