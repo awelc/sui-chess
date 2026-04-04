@@ -9,6 +9,10 @@ package-lock.json
 *.swo
 *~
 
+# Environment (deployment-specific)
+scripts/.env
+frontend/.env
+
 # OS
 .DS_Store
 Thumbs.db

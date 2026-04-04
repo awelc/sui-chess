@@ -1,12 +1,16 @@
 /// Configuration for the chess dApp.
-/// Update PACKAGE_ID after republishing contracts.
+/// Set VITE_NETWORK and VITE_PACKAGE_ID in .env or at build time.
 
-export const NETWORK = "devnet";
+function requireEnv(name: string): string {
+  const value = import.meta.env[name] as string | undefined;
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
-/// Published package ID on devnet.
-/// Update this after running scripts/publish.sh.
-export const PACKAGE_ID =
-  "0x954ddbda5d607ef7c62ab23166b2501698882e1a8a41002dc521d71a4b8a77cc";
+export const NETWORK = requireEnv("VITE_NETWORK");
+export const PACKAGE_ID = requireEnv("VITE_PACKAGE_ID");
 
 /// Module name in the package.
 export const MODULE = "chess";

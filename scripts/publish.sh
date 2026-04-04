@@ -72,8 +72,19 @@ else
     echo "PACKAGE_ID=$PACKAGE_ID" >> "$ENV_FILE"
 fi
 
+# Update frontend/.env.
+FRONTEND_ENV="$SCRIPT_DIR/../frontend/.env"
+ACTIVE_NETWORK=$(sui client active-env)
+cat > "$FRONTEND_ENV" <<EOF
+VITE_NETWORK=$ACTIVE_NETWORK
+VITE_PACKAGE_ID=$PACKAGE_ID
+EOF
+
 echo ""
 echo "=== $ENV_FILE ==="
 cat "$ENV_FILE"
+echo ""
+echo "=== $FRONTEND_ENV ==="
+cat "$FRONTEND_ENV"
 echo ""
 echo "Run ./test-game.sh to test."

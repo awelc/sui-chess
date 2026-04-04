@@ -3,6 +3,8 @@ import { Transaction } from "@mysten/sui/transactions";
 import { suiClient } from "../suiClient";
 import { PACKAGE_ID, MODULE } from "../config";
 
+const GAME_TYPE_SUFFIX = `::${MODULE}::Game`;
+
 const TARGET_CREATE = `${PACKAGE_ID}::${MODULE}::create_game`;
 const TARGET_JOIN = `${PACKAGE_ID}::${MODULE}::join_game`;
 
@@ -40,7 +42,7 @@ function extractGameId(tx: {
   for (const obj of effects.changedObjects) {
     if (obj.idOperation === "Created") {
       const t = types[obj.objectId];
-      if (t && t.includes("::chess::Game")) {
+      if (t && t.endsWith(GAME_TYPE_SUFFIX)) {
         return obj.objectId;
       }
     }
