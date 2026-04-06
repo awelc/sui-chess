@@ -191,8 +191,8 @@ module sui_chess::chess {
         // Check for game-ending conditions.
         let opponent = game.current_turn;
         let is_check = game.board.is_in_check(opponent);
-        let is_checkmate = is_check && game.board.is_checkmate(opponent);
-        let is_stalemate = !is_check && game.board.is_stalemate(opponent);
+        let is_checkmate = is_check && !game.board.has_any_playable_move(opponent);
+        let is_stalemate = !is_check && !game.board.has_any_playable_move(opponent);
 
         if (is_checkmate) {
             game.status = if (player == WHITE()) { WHITE_WINS() } else { BLACK_WINS() };

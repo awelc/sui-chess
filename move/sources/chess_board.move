@@ -16,6 +16,7 @@ module sui_chess::chess_board {
     public use fun sui_chess::chess_rules::is_in_check as Board.is_in_check;
     public use fun sui_chess::chess_rules::is_checkmate as Board.is_checkmate;
     public use fun sui_chess::chess_rules::is_stalemate as Board.is_stalemate;
+    public use fun sui_chess::chess_rules::has_any_playable_move as Board.has_any_playable_move;
 
     // ===== Errors =====
 
@@ -86,6 +87,9 @@ module sui_chess::chess_board {
         /// Column of the pawn that just double-pushed and is capturable en-passant,
         /// or `none` if no en-passant is available. Resets every move.
         ep_target_col: Option<u8>,
+        /// Cached king positions for O(1) lookup in check detection.
+        white_king_pos: Pos,
+        black_king_pos: Pos,
     }
 
     // ===== Position constructors and accessors =====
@@ -132,10 +136,23 @@ module sui_chess::chess_board {
     }
 
     /// Write a square at the given position.
+    /// Automatically updates the cached king position when a king is placed.
     public fun set_piece(board: &mut Board, p: Pos, piece: Option<Piece>) {
         let idx = (p.row as u64) * 8 + (p.col as u64);
         assert!(idx < 64, EIndexOutOfBounds);
         *board.squares.borrow_mut(idx) = piece;
+
+        // Keep king position cache in sync.
+        if (piece.is_some()) {
+            let pc = piece.borrow();
+            if (pc.piece_type == KING()) {
+                if (pc.color == WHITE()) {
+                    board.white_king_pos = p;
+                } else {
+                    board.black_king_pos = p;
+                };
+            };
+        };
     }
 
     /// True if the square at the given position has no piece.
@@ -151,6 +168,11 @@ module sui_chess::chess_board {
     /// Column of the pawn eligible for en-passant capture, or none.
     public fun ep_target_col(board: &Board): Option<u8> {
         board.ep_target_col
+    }
+
+    /// Get the cached king position for a player.
+    public fun king_pos(board: &Board, player: u8): Pos {
+        if (player == WHITE()) { board.white_king_pos } else { board.black_king_pos }
     }
 
     // ===== Board construction =====
@@ -200,10 +222,16 @@ module sui_chess::chess_board {
         squares.push_back(option::some(new_piece(KNIGHT(), BLACK())));
         squares.push_back(option::some(new_piece(ROOK(), BLACK())));
 
-        Board { squares, ep_target_col: option::none() }
+        Board {
+            squares,
+            ep_target_col: option::none(),
+            white_king_pos: Pos { row: 0, col: E() }, // e1
+            black_king_pos: Pos { row: 7, col: E() }, // e8
+        }
     }
 
     /// Create an empty board (useful for setting up test positions).
+    /// King positions default to e1/e8; set_piece auto-updates them when a king is placed.
     public fun empty(): Board {
         let mut squares = vector::empty<Option<Piece>>();
         let mut i: u64 = 0;
@@ -211,7 +239,12 @@ module sui_chess::chess_board {
             squares.push_back(option::none());
             i = i + 1;
         };
-        Board { squares, ep_target_col: option::none() }
+        Board {
+            squares,
+            ep_target_col: option::none(),
+            white_king_pos: Pos { row: 0, col: E() },
+            black_king_pos: Pos { row: 7, col: E() },
+        }
     }
 
     /// Create an empty board with a specific ep_target_col (useful for EP test setup).
@@ -301,6 +334,15 @@ module sui_chess::chess_board {
         // Place the piece and clear the origin square.
         set_piece(&mut new_board, to, option::some(moved_piece));
         set_piece(&mut new_board, from, option::none());
+
+        // Update cached king position if the king moved.
+        if (piece.piece_type == KING()) {
+            if (player == WHITE()) {
+                new_board.white_king_pos = to;
+            } else {
+                new_board.black_king_pos = to;
+            };
+        };
 
         new_board
     }

@@ -100,7 +100,7 @@ module sui_chess::chess_rules {
 
     /// Returns true if the given player's king is in check.
     public fun is_in_check(board: &Board, player: u8): bool {
-        let king_pos = find_king(board, player);
+        let king_pos = board.king_pos(player);
         let opponent = if (player == WHITE()) { BLACK() } else {
             WHITE()
         };
@@ -349,29 +349,12 @@ module sui_chess::chess_rules {
         false
     }
 
-    /// Find the position of the given player's king. Aborts if king not found.
-    fun find_king(board: &Board, player: u8): Pos {
-        let squares = board.squares();
-        let mut i: u64 = 0;
-        while (i < 64) {
-            let sq = squares.borrow(i);
-            if (sq.is_some()) {
-                let piece = sq.borrow();
-                if (piece.kind() == KING() && piece.color() == player) {
-                    return chess_board::sq((i % 8) as u8, (i / 8) as u8 + 1)
-                };
-            };
-            i = i + 1;
-        };
-        abort 0 // King must always exist.
-    }
-
     // ===== Legal move enumeration =====
 
     /// Returns true if the player has at least one playable move.
     /// A "playable" move is both a valid piece movement AND does not leave the player's king in check.
     /// Iterates all pieces, tries all candidate destinations, short-circuits on first playable move.
-    fun has_any_playable_move(board: &Board, player: u8): bool {
+    public fun has_any_playable_move(board: &Board, player: u8): bool {
         let squares = board.squares();
         let mut i: u64 = 0;
         while (i < 64) {
