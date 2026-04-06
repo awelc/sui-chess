@@ -4,15 +4,26 @@ import {
   FILE_LABELS,
 } from "../lib/boardParser";
 
+export interface PendingMove {
+  displayRow: number;
+  col: number;
+  piece: PieceInfo;
+  status: "pending" | "rejected";
+}
+
 interface ChessBoardProps {
   board: (PieceInfo | null)[][];
   selectedSquare: { displayRow: number; col: number } | null;
+  pendingSource: { displayRow: number; col: number } | null;
+  pendingMove: PendingMove | null;
   onSquareClick: (displayRow: number, col: number) => void;
 }
 
 export default function ChessBoard({
   board,
   selectedSquare,
+  pendingSource,
+  pendingMove,
   onSquareClick,
 }: ChessBoardProps) {
   return (
@@ -23,15 +34,37 @@ export default function ChessBoard({
           {row.map((piece, col) => {
             const isLight = (displayRow + col) % 2 === 0;
             const isSelected =
-              selectedSquare?.displayRow === displayRow &&
-              selectedSquare?.col === col;
+              (selectedSquare?.displayRow === displayRow &&
+                selectedSquare?.col === col) ||
+              (pendingSource?.displayRow === displayRow &&
+                pendingSource?.col === col);
+            const isPendingDest =
+              pendingMove?.displayRow === displayRow &&
+              pendingMove?.col === col;
+            const moveStatus = isPendingDest ? pendingMove.status : null;
+
             return (
               <button
                 key={col}
-                className={`square ${isLight ? "light" : "dark"} ${isSelected ? "selected" : ""}`}
+                className={`square ${isLight ? "light" : "dark"} ${isSelected ? "selected" : ""} ${moveStatus ?? ""}`}
                 onClick={() => onSquareClick(displayRow, col)}
               >
-                {piece ? pieceToUnicode(piece) : ""}
+                {isPendingDest ? (
+                  <span className="square-content">
+                    {piece && (
+                      <span className="existing-piece">
+                        {pieceToUnicode(piece)}
+                      </span>
+                    )}
+                    <span className="ghost-piece">
+                      {pieceToUnicode(pendingMove.piece)}
+                    </span>
+                  </span>
+                ) : piece ? (
+                  pieceToUnicode(piece)
+                ) : (
+                  ""
+                )}
               </button>
             );
           })}

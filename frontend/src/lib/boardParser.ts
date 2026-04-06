@@ -113,3 +113,30 @@ export function displayToChessCoords(
 }
 
 export const FILE_LABELS = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+/**
+ * Extract a human-readable message from a Move abort error.
+ *
+ * The SDK formats smart errors as:
+ *   "MoveAbort in 1st command, 'EConstantName': Human readable message, in '0x...::module::fn' (line N)"
+ *
+ * We extract the text between "': " and ", in '" generically —
+ * no need to hardcode individual error strings.
+ */
+export function parseAbortMessage(raw: string): string {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    decoded = raw;
+  }
+
+  // Extract the smart error value: text between "': " and ", in '"
+  const match = decoded.match(/':\s*(.+?),\s*in\s+'/);
+  if (match) return match[1];
+
+  // Fallback for MoveAbort without smart error
+  if (decoded.includes("MoveAbort")) return "Illegal move";
+
+  return decoded;
+}

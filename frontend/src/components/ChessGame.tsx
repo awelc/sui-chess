@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useGame } from "../hooks/useGame";
 import { useMakeMove, useResign, useOfferDraw } from "../hooks/useGameActions";
-import ChessBoard from "./ChessBoard";
+import ChessBoard, { type PendingMove } from "./ChessBoard";
 import {
+  type PieceInfo,
   displayToChessCoords,
+  parseAbortMessage,
   WHITE,
   STATUS_ACTIVE,
   STATUS_WAITING,
@@ -33,6 +35,19 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
   } | null>(null);
   const [moveError, setMoveError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [pendingSource, setPendingSource] = useState<{
+    displayRow: number;
+    col: number;
+  } | null>(null);
+  const rejectTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const clearPending = useCallback(() => {
+    setPendingMove(null);
+    setPendingSource(null);
+    setMoveError("");
+    if (rejectTimer.current) clearTimeout(rejectTimer.current);
+  }, []);
 
   if (isLoading && !game) return <p>Loading game...</p>;
   if (fetchError) return <p className="error">Error: {String(fetchError)}</p>;
@@ -47,13 +62,14 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
       (game.currentTurn !== WHITE && isBlack));
 
   const handleSquareClick = async (displayRow: number, col: number) => {
+    // Clear any previous pending/rejected move on click
+    if (pendingMove) clearPending();
+
     if (!isMyTurn || submitting) return;
 
     if (!selectedSquare) {
-      // First click: select source
       const piece = game.board[displayRow][col];
       if (!piece) return;
-      // Only select own pieces
       const myColor = isWhite ? WHITE : 1;
       if (piece.color !== myColor) return;
       setSelectedSquare({ displayRow, col });
@@ -66,14 +82,22 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
       selectedSquare.col,
     );
     const to = displayToChessCoords(displayRow, col);
+    const piece = game.board[selectedSquare.displayRow][
+      selectedSquare.col
+    ] as PieceInfo;
+
+    // Show pending move immediately: source stays green, destination goes green
+    setPendingSource({
+      displayRow: selectedSquare.displayRow,
+      col: selectedSquare.col,
+    });
+    setPendingMove({ displayRow, col, piece, status: "pending" });
     setSelectedSquare(null);
     setMoveError("");
     setSubmitting(true);
 
-    // Auto-promote to queen if pawn reaches last rank
     let promotion = 0;
-    const piece = game.board[selectedSquare.displayRow][selectedSquare.col];
-    if (piece?.type === 1) {
+    if (piece.type === 1) {
       if ((isWhite && to.rank === 8) || (isBlack && to.rank === 1)) {
         promotion = QUEEN;
       }
@@ -81,8 +105,17 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
 
     try {
       await makeMove(gameId, from.file, from.rank, to.file, to.rank, promotion);
+      setPendingMove(null);
+      setPendingSource(null);
     } catch (err) {
-      setMoveError(err instanceof Error ? err.message : String(err));
+      const raw = err instanceof Error ? err.message : String(err);
+      setMoveError(parseAbortMessage(raw));
+      setPendingSource(null);
+      setPendingMove({ displayRow, col, piece, status: "rejected" });
+      rejectTimer.current = setTimeout(() => {
+        setPendingMove(null);
+        setMoveError("");
+      }, 3000);
     } finally {
       setSubmitting(false);
     }
@@ -115,17 +148,22 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
   return (
     <div className="chess-game">
       <div className="game-info">
-        <code className="game-id">{gameId}</code>
+        <div className="game-id-row">
+          <span className="game-id-label">Game ID</span>
+          <code className="game-id">{gameId}</code>
+        </div>
         <StatusBar game={game} isWhite={isWhite} isBlack={isBlack} />
       </div>
 
       <ChessBoard
         board={game.board}
         selectedSquare={selectedSquare}
+        pendingSource={pendingSource}
+        pendingMove={pendingMove}
         onSquareClick={handleSquareClick}
       />
 
-      {moveError && <p className="error">{moveError}</p>}
+      {moveError && <p className="error move-error">{moveError}</p>}
 
       {game.status === STATUS_ACTIVE && (isWhite || isBlack) && (
         <div className="game-controls">
