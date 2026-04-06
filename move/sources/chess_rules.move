@@ -105,19 +105,15 @@ module sui_chess::chess_rules {
             WHITE()
         };
 
-        // Check if any opponent piece can attack the king's square.
-        let squares = board.squares();
+        // Iterate only opponent's pieces instead of all 64 squares.
+        let opp_pieces = board.pieces(opponent);
+        let len = opp_pieces.length();
         let mut i: u64 = 0;
-        while (i < 64) {
-            let sq = squares.borrow(i);
-            if (sq.is_some()) {
-                let piece = sq.borrow();
-                if (piece.color() == opponent) {
-                    let attacker_pos = chess_board::sq((i % 8) as u8, (i / 8) as u8 + 1);
-                    if (can_attack(board, piece, attacker_pos, king_pos)) {
-                        return true
-                    };
-                };
+        while (i < len) {
+            let attacker_pos = *opp_pieces.borrow(i);
+            let piece = board.piece_at(attacker_pos).borrow();
+            if (can_attack(board, piece, attacker_pos, king_pos)) {
+                return true
             };
             i = i + 1;
         };
@@ -331,18 +327,14 @@ module sui_chess::chess_rules {
         let opponent = if (player == WHITE()) { BLACK() } else {
             WHITE()
         };
-        let squares = board.squares();
+        let opp_pieces = board.pieces(opponent);
+        let len = opp_pieces.length();
         let mut i: u64 = 0;
-        while (i < 64) {
-            let sq = squares.borrow(i);
-            if (sq.is_some()) {
-                let piece = sq.borrow();
-                if (piece.color() == opponent) {
-                    let attacker_pos = chess_board::sq((i % 8) as u8, (i / 8) as u8 + 1);
-                    if (can_attack(board, piece, attacker_pos, target)) {
-                        return true
-                    };
-                };
+        while (i < len) {
+            let attacker_pos = *opp_pieces.borrow(i);
+            let piece = board.piece_at(attacker_pos).borrow();
+            if (can_attack(board, piece, attacker_pos, target)) {
+                return true
             };
             i = i + 1;
         };
@@ -355,18 +347,14 @@ module sui_chess::chess_rules {
     /// A "playable" move is both a valid piece movement AND does not leave the player's king in check.
     /// Iterates all pieces, tries all candidate destinations, short-circuits on first playable move.
     public fun has_any_playable_move(board: &Board, player: u8): bool {
-        let squares = board.squares();
+        let player_pieces = board.pieces(player);
+        let len = player_pieces.length();
         let mut i: u64 = 0;
-        while (i < 64) {
-            let sq = squares.borrow(i);
-            if (sq.is_some()) {
-                let piece = sq.borrow();
-                if (piece.color() == player) {
-                    let from = chess_board::sq((i % 8) as u8, (i / 8) as u8 + 1);
-                    if (has_playable_move(board, piece, player, from)) {
-                        return true
-                    };
-                };
+        while (i < len) {
+            let from = *player_pieces.borrow(i);
+            let piece = board.piece_at(from).borrow();
+            if (has_playable_move(board, piece, player, from)) {
+                return true
             };
             i = i + 1;
         };

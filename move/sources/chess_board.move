@@ -90,6 +90,10 @@ module sui_chess::chess_board {
         /// Cached king positions for O(1) lookup in check detection.
         white_king_pos: Pos,
         black_king_pos: Pos,
+        /// Positions of all white pieces (for fast iteration in check/move enumeration).
+        white_pieces: vector<Pos>,
+        /// Positions of all black pieces.
+        black_pieces: vector<Pos>,
     }
 
     // ===== Position constructors and accessors =====
@@ -136,15 +140,28 @@ module sui_chess::chess_board {
     }
 
     /// Write a square at the given position.
-    /// Automatically updates the cached king position when a king is placed.
+    /// Automatically updates king positions and piece lists.
     public fun set_piece(board: &mut Board, p: Pos, piece: Option<Piece>) {
         let idx = (p.row as u64) * 8 + (p.col as u64);
         assert!(idx < 64, EIndexOutOfBounds);
+
+        // Remove old piece at this position from its piece list (handles captures + clears).
+        let old = board.squares.borrow(idx);
+        if (old.is_some()) {
+            let old_pc = old.borrow();
+            let old_list = if (old_pc.color == WHITE()) {
+                &mut board.white_pieces
+            } else {
+                &mut board.black_pieces
+            };
+            vector_remove(old_list, &p);
+        };
+
         *board.squares.borrow_mut(idx) = piece;
 
-        // Keep king position cache in sync.
         if (piece.is_some()) {
             let pc = piece.borrow();
+            // Update king position cache.
             if (pc.piece_type == KING()) {
                 if (pc.color == WHITE()) {
                     board.white_king_pos = p;
@@ -152,6 +169,13 @@ module sui_chess::chess_board {
                     board.black_king_pos = p;
                 };
             };
+            // Add to piece list.
+            let list = if (pc.color == WHITE()) {
+                &mut board.white_pieces
+            } else {
+                &mut board.black_pieces
+            };
+            list.push_back(p);
         };
     }
 
@@ -160,7 +184,7 @@ module sui_chess::chess_board {
         piece_at(board, p).is_none()
     }
 
-    /// Borrow the raw squares vector (useful for iteration).
+    /// Borrow the raw squares vector.
     public fun squares(board: &Board): &vector<Option<Piece>> {
         &board.squares
     }
@@ -173,6 +197,11 @@ module sui_chess::chess_board {
     /// Get the cached king position for a player.
     public fun king_pos(board: &Board, player: u8): Pos {
         if (player == WHITE()) { board.white_king_pos } else { board.black_king_pos }
+    }
+
+    /// Get the piece positions for a player.
+    public fun pieces(board: &Board, player: u8): &vector<Pos> {
+        if (player == WHITE()) { &board.white_pieces } else { &board.black_pieces }
     }
 
     // ===== Board construction =====
@@ -222,11 +251,25 @@ module sui_chess::chess_board {
         squares.push_back(option::some(new_piece(KNIGHT(), BLACK())));
         squares.push_back(option::some(new_piece(ROOK(), BLACK())));
 
+        // Build piece position lists.
+        let mut white_pieces = vector::empty<Pos>();
+        let mut black_pieces = vector::empty<Pos>();
+        let mut col: u8 = 0;
+        while (col < 8) {
+            white_pieces.push_back(Pos { row: 0, col }); // back rank
+            white_pieces.push_back(Pos { row: 1, col }); // pawns
+            black_pieces.push_back(Pos { row: 6, col }); // pawns
+            black_pieces.push_back(Pos { row: 7, col }); // back rank
+            col = col + 1;
+        };
+
         Board {
             squares,
             ep_target_col: option::none(),
-            white_king_pos: Pos { row: 0, col: E() }, // e1
-            black_king_pos: Pos { row: 7, col: E() }, // e8
+            white_king_pos: Pos { row: 0, col: E() },
+            black_king_pos: Pos { row: 7, col: E() },
+            white_pieces,
+            black_pieces,
         }
     }
 
@@ -244,6 +287,8 @@ module sui_chess::chess_board {
             ep_target_col: option::none(),
             white_king_pos: Pos { row: 0, col: E() },
             black_king_pos: Pos { row: 7, col: E() },
+            white_pieces: vector::empty(),
+            black_pieces: vector::empty(),
         }
     }
 
@@ -345,5 +390,21 @@ module sui_chess::chess_board {
         };
 
         new_board
+    }
+
+    // ===== Internal helpers =====
+
+    /// Remove the first occurrence of `val` from `v`. No-op if not found.
+    fun vector_remove(v: &mut vector<Pos>, val: &Pos) {
+        let len = v.length();
+        let mut i: u64 = 0;
+        while (i < len) {
+            let item = v.borrow(i);
+            if (item.row == val.row && item.col == val.col) {
+                v.swap_remove(i);
+                return
+            };
+            i = i + 1;
+        };
     }
 }
