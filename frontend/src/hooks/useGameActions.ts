@@ -7,6 +7,9 @@ const GAME_TYPE_SUFFIX = `::${MODULE}::Game`;
 
 const TARGET_CREATE = `${PACKAGE_ID}::${MODULE}::create_game`;
 const TARGET_JOIN = `${PACKAGE_ID}::${MODULE}::join_game`;
+const TARGET_MOVE = `${PACKAGE_ID}::${MODULE}::make_move`;
+const TARGET_RESIGN = `${PACKAGE_ID}::${MODULE}::resign`;
+const TARGET_DRAW = `${PACKAGE_ID}::${MODULE}::offer_draw`;
 
 /** Sign + execute a transaction and return effects + objectTypes. */
 function useExecuteTransaction() {
@@ -90,4 +93,66 @@ export function useJoinGame() {
   };
 
   return { joinGame, ...rest };
+}
+
+/** Make a move on the board. */
+export function useMakeMove() {
+  const { mutateAsync, ...rest } = useExecuteTransaction();
+
+  const makeMove = async (
+    gameId: string,
+    fromFile: number,
+    fromRank: number,
+    toFile: number,
+    toRank: number,
+    promotion: number = 0,
+  ) => {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: TARGET_MOVE,
+      arguments: [
+        tx.object(gameId),
+        tx.pure.u8(fromFile),
+        tx.pure.u8(fromRank),
+        tx.pure.u8(toFile),
+        tx.pure.u8(toRank),
+        tx.pure.u8(promotion),
+      ],
+    });
+    await mutateAsync({ transaction: tx });
+  };
+
+  return { makeMove, ...rest };
+}
+
+/** Resign the current game. */
+export function useResign() {
+  const { mutateAsync, ...rest } = useExecuteTransaction();
+
+  const resign = async (gameId: string) => {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: TARGET_RESIGN,
+      arguments: [tx.object(gameId)],
+    });
+    await mutateAsync({ transaction: tx });
+  };
+
+  return { resign, ...rest };
+}
+
+/** Offer a draw. */
+export function useOfferDraw() {
+  const { mutateAsync, ...rest } = useExecuteTransaction();
+
+  const offerDraw = async (gameId: string) => {
+    const tx = new Transaction();
+    tx.moveCall({
+      target: TARGET_DRAW,
+      arguments: [tx.object(gameId)],
+    });
+    await mutateAsync({ transaction: tx });
+  };
+
+  return { offerDraw, ...rest };
 }

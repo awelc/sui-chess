@@ -5,6 +5,7 @@ import {
   useDisconnectWallet,
 } from "@mysten/dapp-kit";
 import GameSetup from "./components/GameSetup";
+import ChessGame from "./components/ChessGame";
 import "./App.css";
 
 function truncateAddress(addr: string) {
@@ -91,13 +92,7 @@ function App() {
             <p>Connect your wallet to play chess on Sui.</p>
           </div>
         ) : gameId ? (
-          <div className="game-view">
-            <p>
-              Game: <code className="address">{gameId}</code>
-            </p>
-            <p className="hint">Board coming in Step C...</p>
-            <button onClick={() => setGameId(null)}>Back to lobby</button>
-          </div>
+          <ChessGame gameId={gameId} onLeave={() => setGameId(null)} />
         ) : (
           <GameSetup onGameReady={setGameId} />
         )}
