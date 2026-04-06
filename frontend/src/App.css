@@ -314,3 +314,35 @@ main {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Promotion picker */
+
+.promotion-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.promotion-label {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.promotion-option {
+  width: 48px;
+  height: 48px;
+  font-size: 32px;
+  line-height: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--code-bg);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.promotion-option:hover {
+  background: #7fc97f;
+}

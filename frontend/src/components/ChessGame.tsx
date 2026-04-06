@@ -3,6 +3,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useGame } from "../hooks/useGame";
 import { useMakeMove, useResign, useOfferDraw } from "../hooks/useGameActions";
 import ChessBoard, { type PendingMove } from "./ChessBoard";
+import PromotionPicker from "./PromotionPicker";
 import {
   type PieceInfo,
   displayToChessCoords,
@@ -20,7 +21,15 @@ interface ChessGameProps {
   onLeave: () => void;
 }
 
-const QUEEN = 5;
+interface PromotionPending {
+  from: { file: number; rank: number };
+  to: { file: number; rank: number };
+  displayRow: number;
+  col: number;
+  piece: PieceInfo;
+  sourceDisplayRow: number;
+  sourceCol: number;
+}
 
 export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
   const account = useCurrentAccount();
@@ -40,11 +49,15 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     displayRow: number;
     col: number;
   } | null>(null);
+  const [promotionMove, setPromotionMove] = useState<PromotionPending | null>(
+    null,
+  );
   const rejectTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const clearPending = useCallback(() => {
     setPendingMove(null);
     setPendingSource(null);
+    setPromotionMove(null);
     setMoveError("");
     if (rejectTimer.current) clearTimeout(rejectTimer.current);
   }, []);
@@ -87,30 +100,55 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     ] as PieceInfo;
 
     // Show pending move immediately: source stays green, destination goes green
-    setPendingSource({
+    const srcCoords = {
       displayRow: selectedSquare.displayRow,
       col: selectedSquare.col,
-    });
+    };
+    setPendingSource(srcCoords);
     setPendingMove({ displayRow, col, piece, status: "pending" });
     setSelectedSquare(null);
     setMoveError("");
-    setSubmitting(true);
 
-    let promotion = 0;
-    if (piece.type === 1) {
-      if ((isWhite && to.rank === 8) || (isBlack && to.rank === 1)) {
-        promotion = QUEEN;
-      }
+    // Check if this is a pawn promotion
+    const isPawnPromotion =
+      piece.type === 1 &&
+      ((isWhite && to.rank === 8) || (isBlack && to.rank === 1));
+
+    if (isPawnPromotion) {
+      setPromotionMove({
+        from,
+        to,
+        displayRow,
+        col,
+        piece,
+        sourceDisplayRow: srcCoords.displayRow,
+        sourceCol: srcCoords.col,
+      });
+      return;
     }
 
+    await submitMove(from, to, 0, displayRow, col, piece);
+  };
+
+  const submitMove = async (
+    from: { file: number; rank: number },
+    to: { file: number; rank: number },
+    promotion: number,
+    displayRow: number,
+    col: number,
+    piece: PieceInfo,
+  ) => {
+    setSubmitting(true);
     try {
       await makeMove(gameId, from.file, from.rank, to.file, to.rank, promotion);
       setPendingMove(null);
       setPendingSource(null);
+      setPromotionMove(null);
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
       setMoveError(parseAbortMessage(raw));
       setPendingSource(null);
+      setPromotionMove(null);
       setPendingMove({ displayRow, col, piece, status: "rejected" });
       rejectTimer.current = setTimeout(() => {
         setPendingMove(null);
@@ -119,6 +157,12 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePromotion = async (pieceType: number) => {
+    if (!promotionMove) return;
+    const { from, to, displayRow, col, piece } = promotionMove;
+    await submitMove(from, to, pieceType, displayRow, col, piece);
   };
 
   const handleResign = async () => {
@@ -162,6 +206,13 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
         pendingMove={pendingMove}
         onSquareClick={handleSquareClick}
       />
+
+      {promotionMove && (
+        <PromotionPicker
+          color={isWhite ? WHITE : 1}
+          onSelect={handlePromotion}
+        />
+      )}
 
       {moveError && <p className="error move-error">{moveError}</p>}
 
