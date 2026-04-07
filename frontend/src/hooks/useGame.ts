@@ -8,13 +8,13 @@ export function useGame(gameId: string) {
     queryFn: async () => {
       const response = await suiClient.getObject({
         objectId: gameId,
-        include: { json: true },
+        include: { json: true }
       });
       const json = response.object.json;
       if (!json) throw new Error("Game object has no JSON content");
       return parseGameObject(json);
     },
-    refetchInterval: 3000,
+    refetchInterval: 3000
   });
 
   return { game: data ?? null, isLoading, error, refetch };

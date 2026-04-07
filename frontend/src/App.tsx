@@ -1,9 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  ConnectModal,
-  useCurrentAccount,
-  useDisconnectWallet,
-} from "@mysten/dapp-kit";
+import { ConnectModal, useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
 import GameSetup from "./components/GameSetup";
 import ChessGame from "./components/ChessGame";
 import "./App.css";
@@ -31,11 +27,7 @@ function WalletButton() {
   }, [open]);
 
   if (!account) {
-    return (
-      <ConnectModal
-        trigger={<button className="wallet-btn">Connect Wallet</button>}
-      />
-    );
+    return <ConnectModal trigger={<button className="wallet-btn">Connect Wallet</button>} />;
   }
 
   const copyAddress = () => {

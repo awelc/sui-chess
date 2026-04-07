@@ -18,24 +18,20 @@ function useExecuteTransaction() {
       const result = await suiClient.executeTransaction({
         transaction: Uint8Array.from(atob(bytes), (c) => c.charCodeAt(0)),
         signatures: [signature],
-        include: { effects: true, objectTypes: true },
+        include: { effects: true, objectTypes: true }
       });
       if (result.$kind === "FailedTransaction") {
-        const msg =
-          result.FailedTransaction.status.error?.toString() ??
-          "Transaction failed";
+        const msg = result.FailedTransaction.status.error?.toString() ?? "Transaction failed";
         throw new Error(msg);
       }
       return result.Transaction;
-    },
+    }
   });
 }
 
 /** Find the Game object ID from a create_game transaction result. */
 function extractGameId(tx: {
-  effects?:
-    | { changedObjects: Array<{ objectId: string; idOperation: string }> }
-    | undefined;
+  effects?: { changedObjects: Array<{ objectId: string; idOperation: string }> } | undefined;
   objectTypes?: Record<string, string> | undefined;
 }): string | null {
   const effects = tx.effects;
@@ -63,7 +59,7 @@ export function useCreateGame() {
     const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
     tx.moveCall({
       target: TARGET_CREATE,
-      arguments: [tx.pure.address(opponent), betCoin],
+      arguments: [tx.pure.address(opponent), betCoin]
     });
 
     const result = await mutateAsync({ transaction: tx });
@@ -85,7 +81,7 @@ export function useJoinGame() {
     const [betCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(betMist)]);
     tx.moveCall({
       target: TARGET_JOIN,
-      arguments: [tx.object(gameId), betCoin],
+      arguments: [tx.object(gameId), betCoin]
     });
 
     await mutateAsync({ transaction: tx });
@@ -105,7 +101,7 @@ export function useMakeMove() {
     fromRank: number,
     toFile: number,
     toRank: number,
-    promotion: number = 0,
+    promotion: number = 0
   ) => {
     const tx = new Transaction();
     tx.moveCall({
@@ -116,8 +112,8 @@ export function useMakeMove() {
         tx.pure.u8(fromRank),
         tx.pure.u8(toFile),
         tx.pure.u8(toRank),
-        tx.pure.u8(promotion),
-      ],
+        tx.pure.u8(promotion)
+      ]
     });
     await mutateAsync({ transaction: tx });
   };
@@ -133,7 +129,7 @@ export function useResign() {
     const tx = new Transaction();
     tx.moveCall({
       target: TARGET_RESIGN,
-      arguments: [tx.object(gameId)],
+      arguments: [tx.object(gameId)]
     });
     await mutateAsync({ transaction: tx });
   };
@@ -149,7 +145,7 @@ export function useOfferDraw() {
     const tx = new Transaction();
     tx.moveCall({
       target: TARGET_DRAW,
-      arguments: [tx.object(gameId)],
+      arguments: [tx.object(gameId)]
     });
     await mutateAsync({ transaction: tx });
   };

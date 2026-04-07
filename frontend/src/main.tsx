@@ -13,7 +13,7 @@ const queryClient = new QueryClient();
 const networks = {
   devnet: { url: getJsonRpcFullnodeUrl("devnet") },
   testnet: { url: getJsonRpcFullnodeUrl("testnet") },
-  mainnet: { url: getJsonRpcFullnodeUrl("mainnet") },
+  mainnet: { url: getJsonRpcFullnodeUrl("mainnet") }
 };
 
 createRoot(document.getElementById("root")!).render(
@@ -25,5 +25,5 @@ createRoot(document.getElementById("root")!).render(
         </WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 );

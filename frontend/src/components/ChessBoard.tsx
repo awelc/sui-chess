@@ -1,8 +1,4 @@
-import {
-  type PieceInfo,
-  pieceToUnicode,
-  FILE_LABELS,
-} from "../lib/boardParser";
+import { type PieceInfo, pieceToUnicode, FILE_LABELS } from "../lib/boardParser";
 
 export interface PendingMove {
   displayRow: number;
@@ -24,7 +20,7 @@ export default function ChessBoard({
   selectedSquare,
   pendingSource,
   pendingMove,
-  onSquareClick,
+  onSquareClick
 }: ChessBoardProps) {
   return (
     <div className="chess-board">
@@ -34,13 +30,10 @@ export default function ChessBoard({
           {row.map((piece, col) => {
             const isLight = (displayRow + col) % 2 === 0;
             const isSelected =
-              (selectedSquare?.displayRow === displayRow &&
-                selectedSquare?.col === col) ||
-              (pendingSource?.displayRow === displayRow &&
-                pendingSource?.col === col);
+              (selectedSquare?.displayRow === displayRow && selectedSquare?.col === col) ||
+              (pendingSource?.displayRow === displayRow && pendingSource?.col === col);
             const isPendingDest =
-              pendingMove?.displayRow === displayRow &&
-              pendingMove?.col === col;
+              pendingMove?.displayRow === displayRow && pendingMove?.col === col;
             const moveStatus = isPendingDest ? pendingMove.status : null;
 
             return (
@@ -51,14 +44,8 @@ export default function ChessBoard({
               >
                 {isPendingDest ? (
                   <span className="square-content">
-                    {piece && (
-                      <span className="existing-piece">
-                        {pieceToUnicode(piece)}
-                      </span>
-                    )}
-                    <span className="ghost-piece">
-                      {pieceToUnicode(pendingMove.piece)}
-                    </span>
+                    {piece && <span className="existing-piece">{pieceToUnicode(piece)}</span>}
+                    <span className="ghost-piece">{pieceToUnicode(pendingMove.piece)}</span>
                   </span>
                 ) : piece ? (
                   pieceToUnicode(piece)

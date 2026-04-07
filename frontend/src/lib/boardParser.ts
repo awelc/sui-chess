@@ -37,7 +37,7 @@ const PIECE_UNICODE: Record<string, string> = {
   "3_1": "♞",
   "4_1": "♝",
   "5_1": "♛",
-  "6_1": "♚",
+  "6_1": "♚"
 };
 
 export function pieceToUnicode(piece: PieceInfo): string {
@@ -74,14 +74,10 @@ export function parseGameObject(json: Record<string, unknown>): GameState {
     status: Number(fields.status),
     playerWhite: String(fields.player_white),
     playerBlack: String(fields.player_black),
-    whiteBet: String(
-      (fields.white_bet as Record<string, unknown>)?.value ?? "0",
-    ),
-    blackBet: String(
-      (fields.black_bet as Record<string, unknown>)?.value ?? "0",
-    ),
+    whiteBet: String((fields.white_bet as Record<string, unknown>)?.value ?? "0"),
+    blackBet: String((fields.black_bet as Record<string, unknown>)?.value ?? "0"),
     whiteDrawOffer: Boolean(fields.white_draw_offer),
-    blackDrawOffer: Boolean(fields.black_draw_offer),
+    blackDrawOffer: Boolean(fields.black_draw_offer)
   };
 }
 
@@ -107,7 +103,7 @@ function parsePiece(sq: unknown): PieceInfo | null {
 /** Convert display coordinates to chess file/rank for the contract. */
 export function displayToChessCoords(
   displayRow: number,
-  col: number,
+  col: number
 ): { file: number; rank: number } {
   return { file: col, rank: 8 - displayRow };
 }

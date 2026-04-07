@@ -4,7 +4,7 @@ const PROMOTION_OPTIONS = [
   { type: 5, label: "Queen" },
   { type: 2, label: "Rook" },
   { type: 4, label: "Bishop" },
-  { type: 3, label: "Knight" },
+  { type: 3, label: "Knight" }
 ];
 
 interface PromotionPickerProps {
@@ -12,10 +12,7 @@ interface PromotionPickerProps {
   onSelect: (pieceType: number) => void;
 }
 
-export default function PromotionPicker({
-  color,
-  onSelect,
-}: PromotionPickerProps) {
+export default function PromotionPicker({ color, onSelect }: PromotionPickerProps) {
   return (
     <div className="promotion-picker">
       <span className="promotion-label">Promote to:</span>

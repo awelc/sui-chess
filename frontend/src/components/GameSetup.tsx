@@ -19,7 +19,7 @@ export default function GameSetup({ onGameReady }: GameSetupProps) {
 
 function CreateGameForm({
   disabled,
-  onCreated,
+  onCreated
 }: {
   disabled: boolean;
   onCreated: (gameId: string) => void;
@@ -78,7 +78,7 @@ function CreateGameForm({
 
 function JoinGameForm({
   disabled,
-  onJoined,
+  onJoined
 }: {
   disabled: boolean;
   onJoined: (gameId: string) => void;

@@ -13,7 +13,7 @@ import {
   STATUS_WAITING,
   STATUS_WHITE_WINS,
   STATUS_BLACK_WINS,
-  STATUS_DRAW,
+  STATUS_DRAW
 } from "../lib/boardParser";
 
 interface ChessGameProps {
@@ -49,9 +49,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     displayRow: number;
     col: number;
   } | null>(null);
-  const [promotionMove, setPromotionMove] = useState<PromotionPending | null>(
-    null,
-  );
+  const [promotionMove, setPromotionMove] = useState<PromotionPending | null>(null);
   const rejectTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const clearPending = useCallback(() => {
@@ -71,8 +69,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
   const isBlack = myAddress === game.playerBlack;
   const isMyTurn =
     game.status === STATUS_ACTIVE &&
-    ((game.currentTurn === WHITE && isWhite) ||
-      (game.currentTurn !== WHITE && isBlack));
+    ((game.currentTurn === WHITE && isWhite) || (game.currentTurn !== WHITE && isBlack));
 
   const handleSquareClick = async (displayRow: number, col: number) => {
     // Clear any previous pending/rejected move on click
@@ -90,19 +87,14 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     }
 
     // Second click: submit move
-    const from = displayToChessCoords(
-      selectedSquare.displayRow,
-      selectedSquare.col,
-    );
+    const from = displayToChessCoords(selectedSquare.displayRow, selectedSquare.col);
     const to = displayToChessCoords(displayRow, col);
-    const piece = game.board[selectedSquare.displayRow][
-      selectedSquare.col
-    ] as PieceInfo;
+    const piece = game.board[selectedSquare.displayRow][selectedSquare.col] as PieceInfo;
 
     // Show pending move immediately: source stays green, destination goes green
     const srcCoords = {
       displayRow: selectedSquare.displayRow,
-      col: selectedSquare.col,
+      col: selectedSquare.col
     };
     setPendingSource(srcCoords);
     setPendingMove({ displayRow, col, piece, status: "pending" });
@@ -111,8 +103,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
 
     // Check if this is a pawn promotion
     const isPawnPromotion =
-      piece.type === 1 &&
-      ((isWhite && to.rank === 8) || (isBlack && to.rank === 1));
+      piece.type === 1 && ((isWhite && to.rank === 8) || (isBlack && to.rank === 1));
 
     if (isPawnPromotion) {
       setPromotionMove({
@@ -122,7 +113,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
         col,
         piece,
         sourceDisplayRow: srcCoords.displayRow,
-        sourceCol: srcCoords.col,
+        sourceCol: srcCoords.col
       });
       return;
     }
@@ -136,7 +127,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     promotion: number,
     displayRow: number,
     col: number,
-    piece: PieceInfo,
+    piece: PieceInfo
   ) => {
     setSubmitting(true);
     try {
@@ -207,12 +198,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
         onSquareClick={handleSquareClick}
       />
 
-      {promotionMove && (
-        <PromotionPicker
-          color={isWhite ? WHITE : 1}
-          onSelect={handlePromotion}
-        />
-      )}
+      {promotionMove && <PromotionPicker color={isWhite ? WHITE : 1} onSelect={handlePromotion} />}
 
       {moveError && <p className="error move-error">{moveError}</p>}
 
@@ -237,7 +223,7 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
 function StatusBar({
   game,
   isWhite,
-  isBlack,
+  isBlack
 }: {
   game: {
     status: number;
@@ -277,12 +263,8 @@ function StatusBar({
     <div className="status-bar">
       <span>You: {role}</span>
       <span className="status-text">{statusText}</span>
-      {game.whiteDrawOffer && (
-        <span className="draw-offer">White offers draw</span>
-      )}
-      {game.blackDrawOffer && (
-        <span className="draw-offer">Black offers draw</span>
-      )}
+      {game.whiteDrawOffer && <span className="draw-offer">White offers draw</span>}
+      {game.blackDrawOffer && <span className="draw-offer">Black offers draw</span>}
     </div>
   );
 }
