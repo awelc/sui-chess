@@ -82,7 +82,7 @@ main {
 /* Lobby */
 
 .game-lobby {
-  max-width: 500px;
+  max-width: min(500px, calc(100vw - 40px));
   margin: 0 auto;
   text-align: left;
 }
@@ -152,7 +152,8 @@ main {
 .lobby-game {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -233,16 +234,27 @@ main {
 }
 
 .square {
-  width: 56px;
-  height: 56px;
+  --square-size: min(56px, calc((100vw - 64px) / 8));
+  width: var(--square-size);
+  height: var(--square-size);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  font-size: calc(var(--square-size) * 0.64);
   border: none;
   cursor: pointer;
   padding: 0;
   line-height: 1;
+}
+
+.piece-white {
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.piece-black {
+  color: #1a1a1a;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .square.light {
@@ -275,13 +287,13 @@ main {
 }
 
 .existing-piece {
-  font-size: 36px;
+  font-size: inherit;
   line-height: 1;
 }
 
 .ghost-piece {
   position: absolute;
-  font-size: 36px;
+  font-size: inherit;
   line-height: 1;
   opacity: 0.5;
   filter: brightness(0.7);
@@ -301,7 +313,7 @@ main {
 }
 
 .file-label {
-  width: 56px;
+  width: min(56px, calc((100vw - 64px) / 8));
   text-align: center;
   font-size: 13px;
   color: var(--text);
@@ -311,7 +323,7 @@ main {
 
 .game-info {
   width: 100%;
-  max-width: 472px;
+  max-width: min(472px, calc(100vw - 40px));
 }
 
 .game-id-row {

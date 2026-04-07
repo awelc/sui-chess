@@ -1,4 +1,4 @@
-import { type PieceInfo, pieceToUnicode, FILE_LABELS } from "../lib/boardParser";
+import { type PieceInfo, pieceToUnicode, WHITE, FILE_LABELS } from "../lib/boardParser";
 
 export interface PendingMove {
   displayRow: number;
@@ -13,6 +13,11 @@ interface ChessBoardProps {
   pendingSource: { displayRow: number; col: number } | null;
   pendingMove: PendingMove | null;
   onSquareClick: (displayRow: number, col: number) => void;
+}
+
+function PieceChar({ piece }: { piece: PieceInfo }) {
+  const colorClass = piece.color === WHITE ? "piece-white" : "piece-black";
+  return <span className={colorClass}>{pieceToUnicode(piece)}</span>;
 }
 
 export default function ChessBoard({
@@ -44,11 +49,17 @@ export default function ChessBoard({
               >
                 {isPendingDest ? (
                   <span className="square-content">
-                    {piece && <span className="existing-piece">{pieceToUnicode(piece)}</span>}
-                    <span className="ghost-piece">{pieceToUnicode(pendingMove.piece)}</span>
+                    {piece && (
+                      <span className="existing-piece">
+                        <PieceChar piece={piece} />
+                      </span>
+                    )}
+                    <span className="ghost-piece">
+                      <PieceChar piece={pendingMove.piece} />
+                    </span>
                   </span>
                 ) : piece ? (
-                  pieceToUnicode(piece)
+                  <PieceChar piece={piece} />
                 ) : (
                   ""
                 )}
