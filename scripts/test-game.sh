@@ -1,5 +1,5 @@
 #!/bin/bash
-# Integration test: play chess games on devnet via CLI.
+# Integration test: play chess games on the active Sui network via CLI.
 # Sources .env for PACKAGE_ID, WHITE_ADDR, BLACK_ADDR.
 #
 # Usage: ./test-game.sh
@@ -33,69 +33,116 @@ echo "Black:    $BLACK_ADDR"
 echo "Network:  $(sui client active-env)"
 echo ""
 
-GAS_BUDGET=50000000
-HIGH_GAS_BUDGET=500000000
-MIN_BALANCE=5000000000  # 5 SUI — minimum per coin to be considered "sufficient"
-FAUCET_TIMEOUT=120      # seconds to wait for faucet
+GAS_BUDGET=10000000
+HIGH_GAS_BUDGET=50000000
+BET_AMOUNT=1000000      # 0.001 SUI — bet per game
+MIN_TOTAL=50000000      # 0.05 SUI — minimum total balance to run all 3 scenarios
+FAUCET_TIMEOUT=120      # seconds to wait for faucet (devnet only)
+NETWORK=$(sui client active-env)
 PASS=0
 FAIL=0
 
 # ===== Coin management =====
 
-# Count coins with balance >= MIN_BALANCE for the current address.
-count_sufficient_coins() {
-    sui client gas --json 2>/dev/null | jq "[.[] | select(.mistBalance >= $MIN_BALANCE)] | length"
+# Get total balance in MIST across all coins for the current address.
+total_balance() {
+    sui client gas --json 2>/dev/null | jq '[.[].mistBalance] | add // 0'
 }
 
-# Ensure the given address has at least 2 coins with >= 5 SUI each.
-# Requests faucet and polls until funded or timeout.
+# Merge all coins into one using pay-all-sui with explicit input coins.
+consolidate_coins() {
+    local alias=$1
+    sui client switch --address "$alias" > /dev/null 2>&1
+
+    local coins
+    coins=$(sui client gas --json 2>/dev/null)
+    local count
+    count=$(echo "$coins" | jq 'length')
+
+    if [ "$count" -le 1 ]; then
+        return 0
+    fi
+
+    echo "  $alias: merging $count coins into 1..."
+    local addr
+    addr=$(sui client active-address)
+
+    # Build array of coin IDs for --input-coins.
+    local coin_ids=()
+    local i=0
+    while [ "$i" -lt "$count" ]; do
+        coin_ids+=($(echo "$coins" | jq -r ".[$i].gasCoinId"))
+        i=$((i + 1))
+    done
+
+    sui client pay-all-sui \
+        --input-coins "${coin_ids[@]}" \
+        --recipient "$addr" \
+        --gas-budget 5000000 > /dev/null 2>&1
+    sleep 2
+}
+
+# Ensure the given address has enough total balance to run the tests.
+# On devnet: requests CLI faucet if needed.
+# On other networks: prints actionable instructions if insufficient.
 ensure_funded() {
     local alias=$1
     sui client switch --address "$alias" > /dev/null 2>&1
 
-    local sufficient
-    sufficient=$(count_sufficient_coins)
+    local balance
+    balance=$(total_balance)
 
-    if [ "$sufficient" -ge 2 ]; then
+    if [ "$balance" -ge "$MIN_TOTAL" ]; then
         return 0
     fi
 
-    echo "  $alias: only $sufficient coins with >= 5 SUI. Requesting faucet..."
+    if [ "$NETWORK" = "devnet" ]; then
+        echo "  $alias: balance ${balance} MIST, need ${MIN_TOTAL}. Requesting faucet..."
+        sui client faucet > /dev/null 2>&1 || true
+        sleep 2
+        sui client faucet > /dev/null 2>&1 || true
 
-    # Request faucet (twice for 2 coins).
-    sui client faucet > /dev/null 2>&1 || true
-    sleep 2
-    sui client faucet > /dev/null 2>&1 || true
+        local elapsed=0
+        while [ "$elapsed" -lt "$FAUCET_TIMEOUT" ]; do
+            sleep 5
+            elapsed=$((elapsed + 5))
+            balance=$(total_balance)
+            if [ "$balance" -ge "$MIN_TOTAL" ]; then
+                echo "  $alias: funded (${balance} MIST)"
+                return 0
+            fi
+            echo "  $alias: waiting... (${balance} MIST, ${elapsed}s elapsed)"
+        done
+        echo "  ERROR: $alias not funded after ${FAUCET_TIMEOUT}s"
+        return 1
+    fi
 
-    # Poll until we have 2 sufficient coins or timeout.
-    local elapsed=0
-    while [ "$elapsed" -lt "$FAUCET_TIMEOUT" ]; do
-        sleep 5
-        elapsed=$((elapsed + 5))
-        sufficient=$(count_sufficient_coins)
-        if [ "$sufficient" -ge 2 ]; then
-            echo "  $alias: funded ($sufficient coins with >= 5 SUI)"
-            return 0
-        fi
-        echo "  $alias: waiting... ($sufficient sufficient coins, ${elapsed}s elapsed)"
-    done
-
-    echo "  ERROR: $alias not funded after ${FAUCET_TIMEOUT}s"
+    # Non-devnet: can't auto-fund.
+    local addr
+    addr=$(sui client active-address)
+    echo ""
+    echo "  ERROR: $alias has ${balance} MIST, need at least ${MIN_TOTAL} MIST."
+    echo "  Request tokens at: https://faucet.sui.io/?address=$addr"
+    echo "  Then re-run this script."
     return 1
 }
 
-# Ensure both players are funded. Call before each scenario.
-ensure_both_funded() {
-    echo "Checking funds..."
+# Prepare both players: consolidate, fund if needed, re-consolidate.
+prepare_players() {
+    echo "Preparing accounts..."
+    consolidate_coins white-player
+    consolidate_coins black-player
     ensure_funded white-player
     ensure_funded black-player
+    # Re-consolidate in case faucet created new coins.
+    consolidate_coins white-player
+    consolidate_coins black-player
     echo ""
 }
 
 # ===== Transaction helpers =====
 
 # Execute a sui client call and return the transaction digest.
-# Automatically uses the last coin for gas (first coin free for bet).
 sui_call() {
     local addr_alias=$1
     local func=$2
@@ -104,16 +151,12 @@ sui_call() {
 
     sui client switch --address "$addr_alias" > /dev/null 2>&1
 
-    local gas_coin
-    gas_coin=$(sui client gas --json 2>/dev/null | jq -r "[.[] | select(.mistBalance >= $MIN_BALANCE)] | .[-1].gasCoinId")
-
     local output
     output=$(sui client call \
         --package "$PACKAGE_ID" \
         --module chess \
         --function "$func" \
         --args "${args[@]}" \
-        --gas "$gas_coin" \
         --gas-budget $GAS_BUDGET 2>&1)
 
     echo "$output" | grep "Transaction Digest:" | awk '{print $3}'
@@ -128,16 +171,12 @@ sui_call_high_gas() {
 
     sui client switch --address "$addr_alias" > /dev/null 2>&1
 
-    local gas_coin
-    gas_coin=$(sui client gas --json 2>/dev/null | jq -r "[.[] | select(.mistBalance >= $MIN_BALANCE)] | .[-1].gasCoinId")
-
     local output
     output=$(sui client call \
         --package "$PACKAGE_ID" \
         --module chess \
         --function "$func" \
         --args "${args[@]}" \
-        --gas "$gas_coin" \
         --gas-budget $HIGH_GAS_BUDGET 2>&1)
 
     echo "$output" | grep "Transaction Digest:" | awk '{print $3}'
@@ -150,19 +189,24 @@ tx_json() {
     sui client tx-block "$digest" --json 2>&1
 }
 
-# Get the first sufficient coin ID (for use as bet).
-# Note: sui_call uses the LAST sufficient coin for gas. As long as ensure_funded
-# guarantees >= 2 sufficient coins, bet and gas coins are always different.
+# Split off a small bet coin by self-transferring BET_AMOUNT via pay-sui.
+# Works with a single coin (pay-sui uses the input coin for gas).
+# Returns the newly created coin's object ID.
 bet_coin() {
-    local coins
-    coins=$(sui client gas --json 2>/dev/null | jq "[.[] | select(.mistBalance >= $MIN_BALANCE)]")
-    local count
-    count=$(echo "$coins" | jq 'length')
-    if [ "$count" -lt 2 ]; then
-        echo "ERROR: Need at least 2 coins with >= $MIN_BALANCE MIST, have $count" >&2
-        return 1
-    fi
-    echo "$coins" | jq -r '.[0].gasCoinId'
+    local addr
+    addr=$(sui client active-address)
+    local coin_id
+    coin_id=$(sui client gas --json 2>/dev/null | jq -r 'sort_by(-.mistBalance) | .[0].gasCoinId')
+
+    local output
+    output=$(sui client pay-sui \
+        --input-coins "$coin_id" \
+        --amounts $BET_AMOUNT \
+        --recipients "$addr" \
+        --gas-budget 5000000 \
+        --json 2>&1)
+
+    echo "$output" | jq -r '.objectChanges[] | select(.type == "created") | .objectId'
 }
 
 # Report gas cost.
@@ -174,10 +218,12 @@ report_gas() {
     echo "  Gas ($label): ${total}M MIST"
 }
 
+# Consolidate coins and check funding once before all scenarios.
+prepare_players
+
 # ===== Scenario 1: Create + join + one move =====
 
 echo "--- Scenario 1: Create, join, make a move ---"
-ensure_both_funded
 
 # White creates game.
 sui client switch --address white-player > /dev/null
@@ -216,7 +262,6 @@ echo ""
 # ===== Scenario 2: Scholar's mate =====
 
 echo "--- Scenario 2: Scholar's mate (7 moves) ---"
-ensure_both_funded
 
 # Create + join.
 sui client switch --address white-player > /dev/null
@@ -268,7 +313,6 @@ echo ""
 # ===== Scenario 3: Resignation =====
 
 echo "--- Scenario 3: Resignation ---"
-ensure_both_funded
 
 # Create + join.
 sui client switch --address white-player > /dev/null

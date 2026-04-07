@@ -3,4 +3,4 @@ name = "sui_chess"
 edition = "2024"
 
 [environments]
-devnet = "609cb156"
+devnet = ""

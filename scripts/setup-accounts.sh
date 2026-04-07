@@ -1,9 +1,10 @@
 #!/bin/bash
-# Create two test addresses for chess game testing and fund them via devnet faucet.
+# Create two test addresses for chess game testing and fund them via faucet.
 # Writes WHITE_ADDR and BLACK_ADDR to .env in this directory.
 # Safe to re-run — skips address creation if aliases already exist.
 #
-# Usage: ./setup-accounts.sh
+# Usage: ./setup-accounts.sh [network]
+#   network: devnet or testnet (default: current active env)
 
 set -e
 
@@ -12,9 +13,13 @@ ENV_FILE="$SCRIPT_DIR/.env"
 
 echo "=== Setting up chess test accounts ==="
 
-# Ensure devnet env exists and switch to it.
-sui client new-env --alias devnet --rpc https://fullnode.devnet.sui.io:443 2>/dev/null || true
-sui client switch --env devnet
+# Switch to requested network if specified.
+if [ -n "$1" ]; then
+    sui client switch --env "$1" > /dev/null 2>&1 || {
+        echo "Error: Could not switch to environment '$1'"
+        exit 1
+    }
+fi
 echo "Network: $(sui client active-env)"
 
 # Create white player address (skip if exists).

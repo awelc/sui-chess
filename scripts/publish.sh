@@ -1,9 +1,10 @@
 #!/bin/bash
-# Publish the chess package to devnet.
+# Publish the chess package to the active Sui network.
 # Extracts the package ID and writes/updates it in .env.
 # Safe to re-run — publishes a new version each time.
 #
-# Usage: ./publish.sh
+# Usage: ./publish.sh [network]
+#   network: devnet, testnet, or mainnet (default: current active env)
 
 set -e
 
@@ -11,11 +12,17 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MOVE_DIR="$SCRIPT_DIR/../move"
 ENV_FILE="$SCRIPT_DIR/.env"
 
-echo "=== Publishing chess package ==="
+# Switch to requested network if specified.
+if [ -n "$1" ]; then
+    sui client switch --env "$1" > /dev/null 2>&1 || {
+        echo "Error: Could not switch to environment '$1'"
+        exit 1
+    }
+fi
 
-# Ensure devnet.
-sui client switch --env devnet > /dev/null 2>&1 || true
-echo "Network: $(sui client active-env)"
+ACTIVE_NETWORK=$(sui client active-env)
+echo "=== Publishing chess package ==="
+echo "Network: $ACTIVE_NETWORK"
 
 # Switch to white player (publisher).
 if ! sui client switch --address white-player > /dev/null 2>&1; then
@@ -24,13 +31,14 @@ if ! sui client switch --address white-player > /dev/null 2>&1; then
 fi
 echo "Publisher: $(sui client active-address)"
 
-# Remove stale ephemeral publication files.
+# Remove stale publication files so republishing works.
 rm -f "$MOVE_DIR"/Pub.*.toml
+rm -f "$MOVE_DIR"/Published.toml
 
 # Publish — capture text output to extract transaction digest.
 echo ""
 echo "Publishing..."
-PUBLISH_TEXT=$(sui client publish "$MOVE_DIR" --gas-budget 500000000 2>&1)
+PUBLISH_TEXT=$(sui client publish "$MOVE_DIR" --gas-budget 500000000 -e "$ACTIVE_NETWORK" 2>&1)
 
 # Extract transaction digest from text output.
 TX_DIGEST=$(echo "$PUBLISH_TEXT" | grep "Transaction Digest:" | awk '{print $3}')
