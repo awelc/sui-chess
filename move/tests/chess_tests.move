@@ -373,4 +373,117 @@ module sui_chess::chess_tests {
 
         scenario.end();
     }
+
+    // ===== Lobby tests =====
+
+    #[test]
+    /// Create an open game via the lobby. Verify it appears in open_games.
+    fun test_create_open_game() {
+        let mut scenario = test_scenario::begin(WHITE_PLAYER);
+
+        // Create lobby.
+        chess::create_lobby(scenario.ctx());
+
+        // Create open game.
+        scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let bet = coin::mint_for_testing<SUI>(ONE_SUI, scenario.ctx());
+        chess::create_open_game(&mut lobby, bet, scenario.ctx());
+        assert!(chess::open_game_count(&lobby) == 1);
+        test_scenario::return_shared(lobby);
+
+        // Verify the game exists and is WAITING.
+        scenario.next_tx(WHITE_PLAYER);
+        let game = scenario.take_shared<Game>();
+        assert!(game.status() == chess::WAITING());
+        assert!(game.white_bet_value() == ONE_SUI);
+        test_scenario::return_shared(game);
+
+        scenario.end();
+    }
+
+    #[test]
+    /// Join an open game via the lobby. Verify it's removed from lobby and game is ACTIVE.
+    fun test_join_open_game() {
+        let mut scenario = test_scenario::begin(WHITE_PLAYER);
+
+        chess::create_lobby(scenario.ctx());
+
+        scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let bet = coin::mint_for_testing<SUI>(ONE_SUI, scenario.ctx());
+        chess::create_open_game(&mut lobby, bet, scenario.ctx());
+        test_scenario::return_shared(lobby);
+
+        // Black (or any stranger) joins.
+        scenario.next_tx(STRANGER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let mut game = scenario.take_shared<Game>();
+        let bet = coin::mint_for_testing<SUI>(2 * ONE_SUI, scenario.ctx());
+        chess::join_open_game(&mut lobby, &mut game, bet, scenario.ctx());
+        assert!(chess::open_game_count(&lobby) == 0);
+        assert!(game.status() == chess::ACTIVE());
+        assert!(game.black_bet_value() == 2 * ONE_SUI);
+        test_scenario::return_shared(lobby);
+        test_scenario::return_shared(game);
+
+        scenario.end();
+    }
+
+    #[test]
+    /// Cancel an open game. Verify bet returned and game removed from lobby.
+    fun test_cancel_open_game() {
+        let mut scenario = test_scenario::begin(WHITE_PLAYER);
+
+        chess::create_lobby(scenario.ctx());
+
+        scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let bet = coin::mint_for_testing<SUI>(5 * ONE_SUI, scenario.ctx());
+        chess::create_open_game(&mut lobby, bet, scenario.ctx());
+        test_scenario::return_shared(lobby);
+
+        // Creator cancels.
+        scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let mut game = scenario.take_shared<Game>();
+        chess::cancel_open_game(&mut lobby, &mut game, scenario.ctx());
+        assert!(chess::open_game_count(&lobby) == 0);
+        assert!(game.status() == chess::DRAW());
+        test_scenario::return_shared(lobby);
+        test_scenario::return_shared(game);
+
+        // Verify bet returned.
+        scenario.next_tx(WHITE_PLAYER);
+        let returned_coin = scenario.take_from_sender<coin::Coin<SUI>>();
+        assert!(returned_coin.value() == 5 * ONE_SUI);
+        test_scenario::return_to_sender(&scenario, returned_coin);
+
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure]
+    /// Non-creator tries to cancel an open game.
+    fun test_cancel_open_game_not_creator() {
+        let mut scenario = test_scenario::begin(WHITE_PLAYER);
+
+        chess::create_lobby(scenario.ctx());
+
+        scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let bet = coin::mint_for_testing<SUI>(ONE_SUI, scenario.ctx());
+        chess::create_open_game(&mut lobby, bet, scenario.ctx());
+        test_scenario::return_shared(lobby);
+
+        // Stranger tries to cancel.
+        scenario.next_tx(STRANGER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
+        let mut game = scenario.take_shared<Game>();
+        chess::cancel_open_game(&mut lobby, &mut game, scenario.ctx());
+        test_scenario::return_shared(lobby);
+        test_scenario::return_shared(game);
+
+        scenario.end();
+    }
 }

@@ -39,6 +39,10 @@ module sui_chess::chess {
     const ENotAPlayer: vector<u8> = b"You are not a player in this game";
     #[error]
     const EWrongOpponent: vector<u8> = b"You are not the designated opponent";
+    #[error]
+    const ENotGameCreator: vector<u8> = b"Only the game creator can cancel";
+    #[error]
+    const EGameNotInLobby: vector<u8> = b"Game not found in the lobby";
 
     // ===== Structs =====
 
@@ -62,6 +66,19 @@ module sui_chess::chess {
         from: Pos,
         to: Pos,
         promotion: u8,
+    }
+
+    /// Shared lobby for discovering open games.
+    public struct Lobby has key {
+        id: UID,
+        open_games: vector<OpenGame>,
+    }
+
+    /// An open game listed in the lobby, waiting for an opponent.
+    public struct OpenGame has store, drop, copy {
+        game_id: ID,
+        creator: address,
+        bet_amount: u64,
     }
 
     // ===== Events =====
@@ -134,7 +151,14 @@ module sui_chess::chess {
     /// Black joins an existing game, locking a bet.
     public fun join_game(game: &mut Game, bet: Coin<SUI>, ctx: &mut TxContext) {
         assert!(game.status == WAITING(), EGameNotWaiting);
-        assert!(ctx.sender() == game.player_black, EWrongOpponent);
+        let sender = ctx.sender();
+
+        // Open games (@0x0) accept any opponent; private games require the designated player.
+        if (game.player_black == @0x0) {
+            game.player_black = sender;
+        } else {
+            assert!(sender == game.player_black, EWrongOpponent);
+        };
 
         balance::join(&mut game.black_bet, coin::into_balance(bet));
         game.status = ACTIVE();
@@ -278,6 +302,99 @@ module sui_chess::chess {
         };
     }
 
+    // ===== Lobby functions =====
+
+    /// Create the shared lobby object. Called once after package publication.
+    public fun create_lobby(ctx: &mut TxContext) {
+        let lobby = Lobby {
+            id: object::new(ctx),
+            open_games: vector::empty(),
+        };
+        transfer::share_object(lobby);
+    }
+
+    /// Create a game open to any opponent and list it in the lobby.
+    public fun create_open_game(lobby: &mut Lobby, bet: Coin<SUI>, ctx: &mut TxContext) {
+        let sender = ctx.sender();
+        let game = Game {
+            id: object::new(ctx),
+            board: chess_board::new(),
+            player_white: sender,
+            player_black: @0x0,
+            current_turn: WHITE(),
+            status: WAITING(),
+            moves: vector::empty(),
+            white_bet: coin::into_balance(bet),
+            black_bet: balance::zero(),
+            white_draw_offer: false,
+            black_draw_offer: false,
+        };
+
+        let game_id = object::id(&game);
+        let bet_amount = balance::value(&game.white_bet);
+
+        lobby.open_games.push_back(OpenGame {
+            game_id,
+            creator: sender,
+            bet_amount,
+        });
+
+        event::emit(GameCreated {
+            game_id,
+            white: sender,
+            black: @0x0,
+            white_bet: bet_amount,
+        });
+
+        transfer::share_object(game);
+    }
+
+    /// Join an open game from the lobby.
+    public fun join_open_game(
+        lobby: &mut Lobby, game: &mut Game, bet: Coin<SUI>, ctx: &mut TxContext,
+    ) {
+        let game_id = object::id(game);
+        remove_from_lobby(lobby, game_id);
+        join_game(game, bet, ctx);
+    }
+
+    /// Cancel an open game and return the creator's bet.
+    public fun cancel_open_game(
+        lobby: &mut Lobby, game: &mut Game, ctx: &mut TxContext,
+    ) {
+        assert!(game.status == WAITING(), EGameNotWaiting);
+        assert!(ctx.sender() == game.player_white, ENotGameCreator);
+
+        let game_id = object::id(game);
+        remove_from_lobby(lobby, game_id);
+
+        // Return the creator's bet.
+        let bet = balance::withdraw_all(&mut game.white_bet);
+        if (balance::value(&bet) > 0) {
+            let coin = coin::from_balance(bet, ctx);
+            transfer::public_transfer(coin, game.player_white);
+        } else {
+            balance::destroy_zero(bet);
+        };
+
+        // Mark game as drawn (effectively cancelled).
+        game.status = DRAW();
+    }
+
+    /// Remove a game from the lobby's open_games list.
+    fun remove_from_lobby(lobby: &mut Lobby, game_id: ID) {
+        let len = lobby.open_games.length();
+        let mut i: u64 = 0;
+        while (i < len) {
+            if (lobby.open_games.borrow(i).game_id == game_id) {
+                lobby.open_games.swap_remove(i);
+                return
+            };
+            i = i + 1;
+        };
+        abort EGameNotInLobby
+    }
+
     // ===== Internal helpers =====
 
     /// Distribute bets based on game result.
@@ -331,6 +448,8 @@ module sui_chess::chess {
     public fun white_draw_offer(game: &Game): bool { game.white_draw_offer }
 
     public fun black_draw_offer(game: &Game): bool { game.black_draw_offer }
+
+    public fun open_game_count(lobby: &Lobby): u64 { lobby.open_games.length() }
 
     // Status constant accessors.
     public fun WAITING(): u8 { 0 }
