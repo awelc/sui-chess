@@ -343,9 +343,8 @@ module sui_chess::chess_rules {
 
     // ===== Legal move enumeration =====
 
-    /// Returns true if the player has at least one playable move.
-    /// A "playable" move is both a valid piece movement AND does not leave the player's king in check.
-    /// Iterates all pieces, tries all candidate destinations, short-circuits on first playable move.
+    /// Returns true if the player has at least one legal move.
+    /// A legal move is a valid piece movement that does not leave the player's king in check.
     public fun has_any_playable_move(board: &Board, player: u8): bool {
         let player_pieces = board.pieces(player);
         let len = player_pieces.length();
@@ -361,63 +360,229 @@ module sui_chess::chess_rules {
         false
     }
 
-    /// Check if a specific piece has any playable move from its position.
-    /// Tests each candidate destination for valid piece movement shape,
-    /// then verifies the resulting position doesn't leave the player's king in check.
+    /// Returns true if the given piece has any legal move from its position.
     fun has_playable_move(board: &Board, piece: &Piece, player: u8, from: Pos): bool {
         let pt = piece.kind();
 
-        let mut to_row: u8 = 0;
-        while (to_row < 8) {
-            let mut to_col: u8 = 0;
-            while (to_col < 8) {
-                let to = chess_board::sq(to_col, to_row + 1);
+        if (pt == PAWN()) {
+            has_playable_pawn_move(board, piece, player, from)
+        } else if (pt == KNIGHT()) {
+            has_playable_knight_move(board, player, from)
+        } else if (pt == KING()) {
+            has_playable_king_move(board, piece, player, from)
+        } else if (pt == BISHOP()) {
+            has_playable_slider_move(board, player, from, true, false)
+        } else if (pt == ROOK()) {
+            has_playable_slider_move(board, player, from, false, true)
+        } else if (pt == QUEEN()) {
+            has_playable_slider_move(board, player, from, true, true)
+        } else {
+            false
+        }
+    }
 
-                // Skip if same square or own piece at destination.
-                if (!(from.row() == to_row && from.col() == to_col)) {
-                    let to_sq = board.piece_at(to);
-                    let own_piece_at_dest = to_sq.is_some() && to_sq.borrow().color() == player;
+    /// Try a single candidate move: check destination is not own piece,
+    /// apply move, and verify king is not left in check.
+    fun try_candidate(board: &Board, player: u8, from: Pos, to_row: u8, to_col: u8, promo: u8): bool {
+        let to = chess_board::sq(to_col, to_row + 1);
+        let to_sq = board.piece_at(to);
+        if (to_sq.is_some() && to_sq.borrow().color() == player) return false;
+        let new_board = board.apply_move(player, from, to, promo);
+        !is_in_check(&new_board, player)
+    }
 
-                    if (!own_piece_at_dest) {
-                        let shape_valid = if (pt == PAWN()) {
-                            validate_pawn_move(board, piece, player, from, to)
-                        } else if (pt == KNIGHT()) {
-                            validate_knight_move(from, to)
-                        } else if (pt == BISHOP()) {
-                            validate_bishop_move(board, from, to)
-                        } else if (pt == ROOK()) {
-                            validate_rook_move(board, from, to)
-                        } else if (pt == QUEEN()) {
-                            validate_queen_move(board, from, to)
-                        } else if (pt == KING()) {
-                            validate_king_move(board, piece, player, from, to)
-                        } else {
-                            false
-                        };
+    /// Pawn: up to 4 candidates (1-2 forward, 2 diagonal captures/en-passant).
+    fun has_playable_pawn_move(board: &Board, piece: &Piece, player: u8, from: Pos): bool {
+        let r = from.row();
+        let c = from.col();
+        let (start_row, last_rank) = if (player == WHITE()) { (1u8, 7u8) } else { (6u8, 0u8) };
 
-                        if (shape_valid) {
-                            // For pawn promotion, try queen (any legal promotion suffices).
-                            let promo = if (pt == PAWN()) {
-                                let last_rank = if (player == WHITE()) { 7u8 } else {
-                                    0u8
-                                };
-                                if (to_row == last_rank) { QUEEN() } else { 0u8 }
-                            } else {
-                                0u8
-                            };
-                            let new_board = board.apply_move(player, from, to, promo);
-                            if (!is_in_check(&new_board, player)) {
-                                return true
-                            };
-                        };
-                    };
-                };
+        let next_row = if (player == WHITE()) { r + 1 } else {
+            if (r == 0) return false;
+            r - 1
+        };
+        if (next_row > 7) return false;
 
-                to_col = to_col + 1;
+        let promo = if (next_row == last_rank) { QUEEN() } else { 0u8 };
+
+        // Forward one.
+        if (board.is_empty(chess_board::sq(c, next_row + 1))) {
+            if (try_candidate(board, player, from, next_row, c, promo)) return true;
+
+            // Forward two from starting row.
+            let double_row = if (player == WHITE()) { r + 2 } else {
+                if (r < 2) { return false } else { r - 2 }
             };
-            to_row = to_row + 1;
+            if (r == start_row && double_row <= 7 &&
+                board.is_empty(chess_board::sq(c, double_row + 1))) {
+                if (try_candidate(board, player, from, double_row, c, 0)) return true;
+            };
+        };
+
+        // Diagonal captures (including en-passant). Use validate_pawn_move for EP logic.
+        if (c > 0) {
+            let to = chess_board::sq(c - 1, next_row + 1);
+            if (validate_pawn_move(board, piece, player, from, to)) {
+                let new_board = board.apply_move(player, from, to, promo);
+                if (!is_in_check(&new_board, player)) return true;
+            };
+        };
+        if (c < 7) {
+            let to = chess_board::sq(c + 1, next_row + 1);
+            if (validate_pawn_move(board, piece, player, from, to)) {
+                let new_board = board.apply_move(player, from, to, promo);
+                if (!is_in_check(&new_board, player)) return true;
+            };
+        };
+
+        false
+    }
+
+    /// Knight: up to 8 L-shaped candidates.
+    fun has_playable_knight_move(board: &Board, player: u8, from: Pos): bool {
+        let r = from.row();
+        let c = from.col();
+
+        // All 8 L-shaped offsets as (row_add, row_sub, col_add, col_sub).
+        // Exactly one of add/sub is non-zero per axis.
+        // Format: [row_add, row_sub, col_add, col_sub]
+        let offsets: vector<vector<u8>> = vector[
+            vector[2, 0, 1, 0], vector[2, 0, 0, 1],
+            vector[0, 2, 1, 0], vector[0, 2, 0, 1],
+            vector[1, 0, 2, 0], vector[1, 0, 0, 2],
+            vector[0, 1, 2, 0], vector[0, 1, 0, 2],
+        ];
+
+        let mut i: u64 = 0;
+        while (i < 8) {
+            let off = offsets.borrow(i);
+            let nr = apply_offset(r, *off.borrow(0), *off.borrow(1));
+            let nc = apply_offset(c, *off.borrow(2), *off.borrow(3));
+            if (nr.is_some() && nc.is_some()) {
+                let nr_val = nr.destroy_some();
+                let nc_val = nc.destroy_some();
+                if (nr_val <= 7 && nc_val <= 7) {
+                    if (try_candidate(board, player, from, nr_val, nc_val, 0)) return true;
+                };
+            };
+            i = i + 1;
         };
         false
+    }
+
+    /// King: up to 8 adjacent squares + 2 castling squares.
+    fun has_playable_king_move(board: &Board, piece: &Piece, player: u8, from: Pos): bool {
+        let r = from.row();
+        let c = from.col();
+
+        // 8 adjacent squares: [row_add, row_sub, col_add, col_sub]
+        let offsets: vector<vector<u8>> = vector[
+            vector[0, 1, 0, 1], vector[0, 1, 0, 0], vector[0, 1, 1, 0],
+            vector[0, 0, 0, 1], vector[0, 0, 1, 0],
+            vector[1, 0, 0, 1], vector[1, 0, 0, 0], vector[1, 0, 1, 0],
+        ];
+
+        let mut i: u64 = 0;
+        while (i < 8) {
+            let off = offsets.borrow(i);
+            let nr = apply_offset(r, *off.borrow(0), *off.borrow(1));
+            let nc = apply_offset(c, *off.borrow(2), *off.borrow(3));
+            if (nr.is_some() && nc.is_some()) {
+                let nr_val = nr.destroy_some();
+                let nc_val = nc.destroy_some();
+                if (nr_val <= 7 && nc_val <= 7) {
+                    if (try_candidate(board, player, from, nr_val, nc_val, 0)) return true;
+                };
+            };
+            i = i + 1;
+        };
+
+        // Castling: use the full validator which checks all conditions.
+        if (!piece.has_moved()) {
+            if (c + 2 <= 7) {
+                let to = chess_board::sq(c + 2, r + 1);
+                if (validate_king_move(board, piece, player, from, to)) {
+                    let new_board = board.apply_move(player, from, to, 0);
+                    if (!is_in_check(&new_board, player)) return true;
+                };
+            };
+            if (c >= 2) {
+                let to = chess_board::sq(c - 2, r + 1);
+                if (validate_king_move(board, piece, player, from, to)) {
+                    let new_board = board.apply_move(player, from, to, 0);
+                    if (!is_in_check(&new_board, player)) return true;
+                };
+            };
+        };
+
+        false
+    }
+
+    /// Slider pieces (bishop, rook, queen): walk rays in each direction until blocked.
+    fun has_playable_slider_move(
+        board: &Board, player: u8, from: Pos, diagonals: bool, straights: bool,
+    ): bool {
+        let r = from.row();
+        let c = from.col();
+
+        // Directions as (row_add, row_sub, col_add, col_sub).
+        let mut directions = vector::empty<vector<u8>>();
+        if (straights) {
+            directions.push_back(vector[1, 0, 0, 0]); // up
+            directions.push_back(vector[0, 1, 0, 0]); // down
+            directions.push_back(vector[0, 0, 1, 0]); // right
+            directions.push_back(vector[0, 0, 0, 1]); // left
+        };
+        if (diagonals) {
+            directions.push_back(vector[1, 0, 1, 0]); // up-right
+            directions.push_back(vector[1, 0, 0, 1]); // up-left
+            directions.push_back(vector[0, 1, 1, 0]); // down-right
+            directions.push_back(vector[0, 1, 0, 1]); // down-left
+        };
+
+        let num_dirs = directions.length();
+        let mut d: u64 = 0;
+        while (d < num_dirs) {
+            let dir = directions.borrow(d);
+            let ra = *dir.borrow(0);
+            let rs = *dir.borrow(1);
+            let ca = *dir.borrow(2);
+            let cs = *dir.borrow(3);
+
+            let mut step: u8 = 1;
+            loop {
+                let nr = apply_offset(r, ra * step, rs * step);
+                let nc = apply_offset(c, ca * step, cs * step);
+                if (nr.is_none() || nc.is_none()) break;
+                let nr_val = nr.destroy_some();
+                let nc_val = nc.destroy_some();
+                if (nr_val > 7 || nc_val > 7) break;
+
+                let to_sq = board.piece_at(chess_board::sq(nc_val, nr_val + 1));
+
+                if (to_sq.is_some()) {
+                    if (to_sq.borrow().color() != player) {
+                        if (try_candidate(board, player, from, nr_val, nc_val, 0)) return true;
+                    };
+                    break
+                };
+
+                if (try_candidate(board, player, from, nr_val, nc_val, 0)) return true;
+
+                step = step + 1;
+            };
+
+            d = d + 1;
+        };
+        false
+    }
+
+    /// Apply a signed offset: add `plus` and subtract `minus` from `val`.
+    /// Returns None if the result would underflow.
+    fun apply_offset(val: u8, plus: u8, minus: u8): Option<u8> {
+        let result = val.checked_add(plus);
+        if (result.is_none()) return option::none();
+        result.destroy_some().checked_sub(minus)
     }
 
     // ===== Utility helpers =====

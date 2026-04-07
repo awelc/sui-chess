@@ -87,10 +87,11 @@ module sui_chess::chess_board {
         /// Column of the pawn that just double-pushed and is capturable en-passant,
         /// or `none` if no en-passant is available. Resets every move.
         ep_target_col: Option<u8>,
-        /// Cached king positions for O(1) lookup in check detection.
+        /// White king position.
         white_king_pos: Pos,
+        /// Black king position.
         black_king_pos: Pos,
-        /// Positions of all white pieces (for fast iteration in check/move enumeration).
+        /// Positions of all white pieces.
         white_pieces: vector<Pos>,
         /// Positions of all black pieces.
         black_pieces: vector<Pos>,
