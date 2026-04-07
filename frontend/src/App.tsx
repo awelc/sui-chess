@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ConnectModal, useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
-import GameSetup from "./components/GameSetup";
+import GameLobby from "./components/GameLobby";
 import ChessGame from "./components/ChessGame";
 import "./App.css";
 
@@ -86,7 +86,7 @@ function App() {
         ) : gameId ? (
           <ChessGame gameId={gameId} onLeave={() => setGameId(null)} />
         ) : (
-          <GameSetup onGameReady={setGameId} />
+          <GameLobby onGameReady={setGameId} />
         )}
       </main>
     </div>

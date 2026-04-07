@@ -80,12 +80,64 @@ else
     echo "PACKAGE_ID=$PACKAGE_ID" >> "$ENV_FILE"
 fi
 
-# Update frontend/.env.
+# Create the lobby.
+echo ""
+echo "Creating lobby..."
+LOBBY_TEXT=$(sui client call \
+    --package "$PACKAGE_ID" \
+    --module chess \
+    --function create_lobby \
+    --gas-budget 10000000 2>&1)
+
+LOBBY_DIGEST=$(echo "$LOBBY_TEXT" | grep "Transaction Digest:" | awk '{print $3}')
+if [ -z "$LOBBY_DIGEST" ]; then
+    echo "Error: Could not create lobby."
+    echo "$LOBBY_TEXT"
+    exit 1
+fi
+
+sleep 2
+LOBBY_JSON=$(sui client tx-block "$LOBBY_DIGEST" --json 2>&1)
+LOBBY_ID=$(echo "$LOBBY_JSON" | jq -r '.objectChanges[] | select(.type == "created" and (.objectType | contains("Lobby"))) | .objectId')
+
+if [ -z "$LOBBY_ID" ] || [ "$LOBBY_ID" = "null" ]; then
+    echo "Error: Could not extract Lobby ID."
+    echo "$LOBBY_JSON" | head -20
+    exit 1
+fi
+
+echo "Lobby: $LOBBY_ID"
+
+# Update .env files.
 FRONTEND_ENV="$SCRIPT_DIR/../frontend/.env"
 ACTIVE_NETWORK=$(sui client active-env)
+
+# scripts/.env
+if [ -f "$ENV_FILE" ] && grep -q '^PACKAGE_ID=' "$ENV_FILE"; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "s|^PACKAGE_ID=.*|PACKAGE_ID=$PACKAGE_ID|" "$ENV_FILE"
+    else
+        sed -i "s|^PACKAGE_ID=.*|PACKAGE_ID=$PACKAGE_ID|" "$ENV_FILE"
+    fi
+else
+    echo "PACKAGE_ID=$PACKAGE_ID" >> "$ENV_FILE"
+fi
+# Add/update LOBBY_ID in scripts/.env.
+if [ -f "$ENV_FILE" ] && grep -q '^LOBBY_ID=' "$ENV_FILE"; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "s|^LOBBY_ID=.*|LOBBY_ID=$LOBBY_ID|" "$ENV_FILE"
+    else
+        sed -i "s|^LOBBY_ID=.*|LOBBY_ID=$LOBBY_ID|" "$ENV_FILE"
+    fi
+else
+    echo "LOBBY_ID=$LOBBY_ID" >> "$ENV_FILE"
+fi
+
+# frontend/.env
 cat > "$FRONTEND_ENV" <<EOF
 VITE_NETWORK=$ACTIVE_NETWORK
 VITE_PACKAGE_ID=$PACKAGE_ID
+VITE_LOBBY_ID=$LOBBY_ID
 EOF
 
 echo ""

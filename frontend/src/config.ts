@@ -11,6 +11,7 @@ function requireEnv(name: string): string {
 
 export const NETWORK = requireEnv("VITE_NETWORK");
 export const PACKAGE_ID = requireEnv("VITE_PACKAGE_ID");
+export const LOBBY_ID = requireEnv("VITE_LOBBY_ID");
 
 /// Module name in the package.
 export const MODULE = "chess";

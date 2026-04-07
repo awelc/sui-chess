@@ -21,6 +21,11 @@ interface ChessGameProps {
   onLeave: () => void;
 }
 
+function truncateGameId(id: string) {
+  if (id.length <= 10) return id;
+  return `${id.slice(0, 4)}...${id.slice(-4)}`;
+}
+
 interface PromotionPending {
   from: { file: number; rank: number };
   to: { file: number; rank: number };
@@ -184,8 +189,8 @@ export default function ChessGame({ gameId, onLeave }: ChessGameProps) {
     <div className="chess-game">
       <div className="game-info">
         <div className="game-id-row">
-          <span className="game-id-label">Game ID</span>
-          <code className="game-id">{gameId}</code>
+          <span className="game-id-label">Game</span>
+          <code className="game-id">{truncateGameId(gameId)}</code>
         </div>
         <StatusBar game={game} isWhite={isWhite} isBlack={isBlack} />
       </div>

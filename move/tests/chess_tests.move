@@ -18,6 +18,12 @@ module sui_chess::chess_tests {
 
     // ===== Helpers =====
 
+    /// Create a lobby (needed by make_move, resign, offer_draw).
+    fun create_lobby(scenario: &mut Scenario) {
+        scenario.next_tx(WHITE_PLAYER);
+        chess::create_lobby(scenario.ctx());
+    }
+
     /// Create a game as White, locking `white_bet` MIST as a wager.
     fun create_game(scenario: &mut Scenario, white_bet: u64) {
         scenario.next_tx(WHITE_PLAYER);
@@ -34,9 +40,9 @@ module sui_chess::chess_tests {
         test_scenario::return_shared(game);
     }
 
-    /// Create + join a game with the given wager amounts (in MIST).
-    /// Returns scenario ready for White's first move.
+    /// Create lobby + create + join a game with the given wager amounts.
     fun setup_active_game(scenario: &mut Scenario, white_bet: u64, black_bet: u64) {
+        create_lobby(scenario);
         create_game(scenario, white_bet);
         join_game(scenario, black_bet);
     }
@@ -52,8 +58,10 @@ module sui_chess::chess_tests {
         promotion: u8,
     ) {
         scenario.next_tx(player);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
         chess::make_move(
+            &mut lobby,
             &mut game,
             from_file,
             from_rank,
@@ -62,6 +70,7 @@ module sui_chess::chess_tests {
             promotion,
             scenario.ctx(),
         );
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
     }
 
@@ -230,9 +239,11 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, 5 * ONE_SUI, 3 * ONE_SUI);
 
         scenario.next_tx(BLACK_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::resign(&mut game, scenario.ctx());
+        chess::resign(&mut lobby, &mut game, scenario.ctx());
         assert!(game.status() == chess::WHITE_WINS());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.next_tx(WHITE_PLAYER);
@@ -252,9 +263,11 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, 2 * ONE_SUI, 2 * ONE_SUI);
 
         scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::resign(&mut game, scenario.ctx());
+        chess::resign(&mut lobby, &mut game, scenario.ctx());
         assert!(game.status() == chess::BLACK_WINS());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.next_tx(BLACK_PLAYER);
@@ -272,9 +285,11 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, 2 * ONE_SUI, 2 * ONE_SUI);
 
         scenario.next_tx(BLACK_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::resign(&mut game, scenario.ctx());
+        chess::resign(&mut lobby, &mut game, scenario.ctx());
         assert!(game.status() == chess::WHITE_WINS());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.next_tx(WHITE_PLAYER);
@@ -293,8 +308,10 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, ONE_SUI, ONE_SUI);
 
         scenario.next_tx(STRANGER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::resign(&mut game, scenario.ctx());
+        chess::resign(&mut lobby, &mut game, scenario.ctx());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.end();
@@ -309,17 +326,21 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, 5 * ONE_SUI, 3 * ONE_SUI);
 
         scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::offer_draw(&mut game, scenario.ctx());
+        chess::offer_draw(&mut lobby, &mut game, scenario.ctx());
         assert!(game.white_draw_offer());
         assert!(!game.black_draw_offer());
         assert!(game.status() == chess::ACTIVE());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.next_tx(BLACK_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::offer_draw(&mut game, scenario.ctx());
+        chess::offer_draw(&mut lobby, &mut game, scenario.ctx());
         assert!(game.status() == chess::DRAW());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.next_tx(WHITE_PLAYER);
@@ -342,11 +363,13 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, ONE_SUI, ONE_SUI);
 
         scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::offer_draw(&mut game, scenario.ctx());
+        chess::offer_draw(&mut lobby, &mut game, scenario.ctx());
         assert!(game.status() == chess::ACTIVE());
         assert!(game.white_draw_offer());
         assert!(!game.black_draw_offer());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         scenario.end();
@@ -359,9 +382,11 @@ module sui_chess::chess_tests {
         setup_active_game(&mut scenario, ONE_SUI, ONE_SUI);
 
         scenario.next_tx(WHITE_PLAYER);
+        let mut lobby = scenario.take_shared<chess::Lobby>();
         let mut game = scenario.take_shared<Game>();
-        chess::offer_draw(&mut game, scenario.ctx());
+        chess::offer_draw(&mut lobby, &mut game, scenario.ctx());
         assert!(game.white_draw_offer());
+        test_scenario::return_shared(lobby);
         test_scenario::return_shared(game);
 
         make_move(&mut scenario, WHITE_PLAYER, E(), 2, E(), 4, 0);

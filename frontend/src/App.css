@@ -79,30 +79,31 @@ main {
   color: var(--text);
 }
 
-.game-setup {
-  display: flex;
-  gap: 40px;
-  justify-content: center;
+/* Lobby */
+
+.game-lobby {
+  max-width: 500px;
+  margin: 0 auto;
   text-align: left;
 }
 
-.setup-form {
-  flex: 1;
-  max-width: 340px;
+.lobby-create {
+  margin-bottom: 32px;
 }
 
-.setup-form h2 {
+.lobby-create h2,
+.lobby-list h2 {
   margin-top: 0;
 }
 
-.setup-form label {
+.lobby-create label {
   display: block;
   margin-bottom: 12px;
   font-size: 14px;
   color: var(--text);
 }
 
-.setup-form input {
+.lobby-create input {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -116,7 +117,7 @@ main {
   box-sizing: border-box;
 }
 
-.setup-form button {
+.lobby-create button {
   margin-top: 8px;
   padding: 8px 20px;
   font-size: 14px;
@@ -127,7 +128,69 @@ main {
   cursor: pointer;
 }
 
-.setup-form button:disabled {
+.lobby-create button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-section {
+  margin-bottom: 24px;
+}
+
+.lobby-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 50px;
+}
+
+.lobby-hint {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.lobby-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.lobby-game.mine {
+  border-color: #7fc97f;
+}
+
+.lobby-game-id {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.lobby-creator {
+  font-family: var(--mono);
+  font-size: 13px;
+  flex: 1;
+}
+
+.lobby-bet {
+  font-size: 14px;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.lobby-action {
+  padding: 4px 14px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.lobby-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

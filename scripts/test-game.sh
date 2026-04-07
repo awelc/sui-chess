@@ -19,7 +19,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 source "$ENV_FILE"
 
-for var in PACKAGE_ID WHITE_ADDR BLACK_ADDR; do
+for var in PACKAGE_ID WHITE_ADDR BLACK_ADDR LOBBY_ID; do
     if [ -z "${!var}" ]; then
         echo "Error: $var not set in $ENV_FILE"
         exit 1
@@ -225,24 +225,24 @@ prepare_players
 
 echo "--- Scenario 1: Create, join, make a move ---"
 
-# White creates game.
+# White creates open game via lobby.
 sui client switch --address white-player > /dev/null
-DIGEST=$(sui_call white-player create_game "$BLACK_ADDR" "$(bet_coin)")
-echo "[White] Created game (tx: $DIGEST)"
+DIGEST=$(sui_call white-player create_open_game "$LOBBY_ID" "$(bet_coin)")
+echo "[White] Created open game (tx: $DIGEST)"
 JSON=$(tx_json "$DIGEST")
 GAME_ID=$(echo "$JSON" | jq -r '.objectChanges[] | select(.type == "created" and (.objectType | contains("Game"))) | .objectId')
 echo "[White] Game: $GAME_ID"
-report_gas "create_game" "$JSON"
+report_gas "create_open_game" "$JSON"
 
-# Black joins.
+# Black joins via lobby.
 sui client switch --address black-player > /dev/null
-DIGEST=$(sui_call black-player join_game "$GAME_ID" "$(bet_coin)")
+DIGEST=$(sui_call black-player join_open_game "$LOBBY_ID" "$GAME_ID" "$(bet_coin)")
 echo "[Black] Joined (tx: $DIGEST)"
 JSON=$(tx_json "$DIGEST")
-report_gas "join_game" "$JSON"
+report_gas "join_open_game" "$JSON"
 
 # White plays e2→e4.
-DIGEST=$(sui_call white-player make_move "$GAME_ID" 4 2 4 4 0)
+DIGEST=$(sui_call white-player make_move "$LOBBY_ID" "$GAME_ID" 4 2 4 4 0)
 echo "[White] e2→e4 (tx: $DIGEST)"
 JSON=$(tx_json "$DIGEST")
 report_gas "make_move" "$JSON"
@@ -263,33 +263,33 @@ echo ""
 
 echo "--- Scenario 2: Scholar's mate (7 moves) ---"
 
-# Create + join.
+# Create + join via lobby.
 sui client switch --address white-player > /dev/null
-DIGEST=$(sui_call white-player create_game "$BLACK_ADDR" "$(bet_coin)")
+DIGEST=$(sui_call white-player create_open_game "$LOBBY_ID" "$(bet_coin)")
 JSON=$(tx_json "$DIGEST")
 GAME_ID2=$(echo "$JSON" | jq -r '.objectChanges[] | select(.type == "created" and (.objectType | contains("Game"))) | .objectId')
 echo "[White] Game: $GAME_ID2"
 
 sui client switch --address black-player > /dev/null
-sui_call black-player join_game "$GAME_ID2" "$(bet_coin)" > /dev/null
+sui_call black-player join_open_game "$LOBBY_ID" "$GAME_ID2" "$(bet_coin)" > /dev/null
 echo "[Black] Joined"
 
 # Play scholar's mate.
 echo "[White] e2→e4"
-sui_call white-player make_move "$GAME_ID2" 4 2 4 4 0 > /dev/null
+sui_call white-player make_move "$LOBBY_ID" "$GAME_ID2" 4 2 4 4 0 > /dev/null
 echo "[Black] e7→e5"
-sui_call black-player make_move "$GAME_ID2" 4 7 4 5 0 > /dev/null
+sui_call black-player make_move "$LOBBY_ID" "$GAME_ID2" 4 7 4 5 0 > /dev/null
 echo "[White] Bf1→c4"
-sui_call white-player make_move "$GAME_ID2" 5 1 2 4 0 > /dev/null
+sui_call white-player make_move "$LOBBY_ID" "$GAME_ID2" 5 1 2 4 0 > /dev/null
 echo "[Black] Nb8→c6"
-sui_call black-player make_move "$GAME_ID2" 1 8 2 6 0 > /dev/null
+sui_call black-player make_move "$LOBBY_ID" "$GAME_ID2" 1 8 2 6 0 > /dev/null
 echo "[White] Qd1→h5"
-sui_call white-player make_move "$GAME_ID2" 3 1 7 5 0 > /dev/null
+sui_call white-player make_move "$LOBBY_ID" "$GAME_ID2" 3 1 7 5 0 > /dev/null
 echo "[Black] Ng8→f6??"
-sui_call black-player make_move "$GAME_ID2" 6 8 5 6 0 > /dev/null
+sui_call black-player make_move "$LOBBY_ID" "$GAME_ID2" 6 8 5 6 0 > /dev/null
 
 echo "[White] Qh5×f7# (CHECKMATE)"
-DIGEST=$(sui_call_high_gas white-player make_move "$GAME_ID2" 7 5 5 7 0)
+DIGEST=$(sui_call_high_gas white-player make_move "$LOBBY_ID" "$GAME_ID2" 7 5 5 7 0)
 JSON=$(tx_json "$DIGEST")
 report_gas "checkmate_move" "$JSON"
 
@@ -314,20 +314,20 @@ echo ""
 
 echo "--- Scenario 3: Resignation ---"
 
-# Create + join.
+# Create + join via lobby.
 sui client switch --address white-player > /dev/null
-DIGEST=$(sui_call white-player create_game "$BLACK_ADDR" "$(bet_coin)")
+DIGEST=$(sui_call white-player create_open_game "$LOBBY_ID" "$(bet_coin)")
 JSON=$(tx_json "$DIGEST")
 GAME_ID3=$(echo "$JSON" | jq -r '.objectChanges[] | select(.type == "created" and (.objectType | contains("Game"))) | .objectId')
 echo "[White] Game: $GAME_ID3"
 
 sui client switch --address black-player > /dev/null
-sui_call black-player join_game "$GAME_ID3" "$(bet_coin)" > /dev/null
+sui_call black-player join_open_game "$LOBBY_ID" "$GAME_ID3" "$(bet_coin)" > /dev/null
 echo "[Black] Joined"
 
 # Black resigns.
 echo "[Black] Resigning..."
-DIGEST=$(sui_call black-player resign "$GAME_ID3")
+DIGEST=$(sui_call black-player resign "$LOBBY_ID" "$GAME_ID3")
 JSON=$(tx_json "$DIGEST")
 report_gas "resign" "$JSON"
 

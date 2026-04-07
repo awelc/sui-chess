@@ -68,10 +68,14 @@ module sui_chess::chess {
         promotion: u8,
     }
 
-    /// Shared lobby for discovering open games.
+    /// Shared lobby for discovering open games and tracking active ones.
+    /// Note: all game lifecycle functions take a Lobby reference so active_games
+    /// stays consistent. This means the Lobby shared object is locked on every
+    /// move transaction. At scale, consider moving cleanup to a separate call.
     public struct Lobby has key {
         id: UID,
         open_games: vector<OpenGame>,
+        active_games: vector<ActiveGame>,
     }
 
     /// An open game listed in the lobby, waiting for an opponent.
@@ -79,6 +83,13 @@ module sui_chess::chess {
         game_id: ID,
         creator: address,
         bet_amount: u64,
+    }
+
+    /// A game in progress, tracked so players can find their games.
+    public struct ActiveGame has store, drop, copy {
+        game_id: ID,
+        white: address,
+        black: address,
     }
 
     // ===== Events =====
@@ -172,6 +183,7 @@ module sui_chess::chess {
 
     /// Make a chess move. Validates the move, updates the board, and checks for game end.
     public fun make_move(
+        lobby: &mut Lobby,
         game: &mut Game,
         from_file: u8,
         from_rank: u8,
@@ -220,7 +232,7 @@ module sui_chess::chess {
 
         if (is_checkmate) {
             game.status = if (player == WHITE()) { WHITE_WINS() } else { BLACK_WINS() };
-            resolve_game(game, ctx);
+            resolve_game(lobby, game, ctx);
             event::emit(GameEnded {
                 game_id: object::id(game),
                 winner: option::some(sender),
@@ -228,7 +240,7 @@ module sui_chess::chess {
             });
         } else if (is_stalemate) {
             game.status = DRAW();
-            resolve_game(game, ctx);
+            resolve_game(lobby, game, ctx);
             event::emit(GameEnded {
                 game_id: object::id(game),
                 winner: option::none(),
@@ -250,7 +262,7 @@ module sui_chess::chess {
     }
 
     /// Resign the game. The opponent wins.
-    public fun resign(game: &mut Game, ctx: &mut TxContext) {
+    public fun resign(lobby: &mut Lobby, game: &mut Game, ctx: &mut TxContext) {
         assert!(game.status == ACTIVE(), EGameNotActive);
 
         let sender = ctx.sender();
@@ -262,7 +274,7 @@ module sui_chess::chess {
             abort ENotAPlayer
         };
 
-        resolve_game(game, ctx);
+        resolve_game(lobby, game, ctx);
 
         event::emit(GameEnded {
             game_id: object::id(game),
@@ -274,7 +286,7 @@ module sui_chess::chess {
     }
 
     /// Offer a draw. If both players have offered, the game is drawn.
-    public fun offer_draw(game: &mut Game, ctx: &mut TxContext) {
+    public fun offer_draw(lobby: &mut Lobby, game: &mut Game, ctx: &mut TxContext) {
         assert!(game.status == ACTIVE(), EGameNotActive);
 
         let sender = ctx.sender();
@@ -288,7 +300,7 @@ module sui_chess::chess {
 
         if (game.white_draw_offer && game.black_draw_offer) {
             game.status = DRAW();
-            resolve_game(game, ctx);
+            resolve_game(lobby, game, ctx);
             event::emit(GameEnded {
                 game_id: object::id(game),
                 winner: option::none(),
@@ -309,6 +321,7 @@ module sui_chess::chess {
         let lobby = Lobby {
             id: object::new(ctx),
             open_games: vector::empty(),
+            active_games: vector::empty(),
         };
         transfer::share_object(lobby);
     }
@@ -339,6 +352,12 @@ module sui_chess::chess {
             bet_amount,
         });
 
+        lobby.active_games.push_back(ActiveGame {
+            game_id,
+            white: sender,
+            black: @0x0,
+        });
+
         event::emit(GameCreated {
             game_id,
             white: sender,
@@ -354,8 +373,10 @@ module sui_chess::chess {
         lobby: &mut Lobby, game: &mut Game, bet: Coin<SUI>, ctx: &mut TxContext,
     ) {
         let game_id = object::id(game);
-        remove_from_lobby(lobby, game_id);
+        remove_from_open_games(lobby, game_id);
         join_game(game, bet, ctx);
+        // Update active_games entry with the black player's address.
+        update_active_game_black(lobby, game_id, ctx.sender());
     }
 
     /// Cancel an open game and return the creator's bet.
@@ -366,7 +387,8 @@ module sui_chess::chess {
         assert!(ctx.sender() == game.player_white, ENotGameCreator);
 
         let game_id = object::id(game);
-        remove_from_lobby(lobby, game_id);
+        remove_from_open_games(lobby, game_id);
+        remove_from_active_games(lobby, game_id);
 
         // Return the creator's bet.
         let bet = balance::withdraw_all(&mut game.white_bet);
@@ -382,7 +404,7 @@ module sui_chess::chess {
     }
 
     /// Remove a game from the lobby's open_games list.
-    fun remove_from_lobby(lobby: &mut Lobby, game_id: ID) {
+    fun remove_from_open_games(lobby: &mut Lobby, game_id: ID) {
         let len = lobby.open_games.length();
         let mut i: u64 = 0;
         while (i < len) {
@@ -395,11 +417,38 @@ module sui_chess::chess {
         abort EGameNotInLobby
     }
 
+    /// Remove a game from the lobby's active_games list. No-op if not found.
+    fun remove_from_active_games(lobby: &mut Lobby, game_id: ID) {
+        let len = lobby.active_games.length();
+        let mut i: u64 = 0;
+        while (i < len) {
+            if (lobby.active_games.borrow(i).game_id == game_id) {
+                lobby.active_games.swap_remove(i);
+                return
+            };
+            i = i + 1;
+        };
+    }
+
+    /// Update the black player address in an active_games entry.
+    fun update_active_game_black(lobby: &mut Lobby, game_id: ID, black: address) {
+        let len = lobby.active_games.length();
+        let mut i: u64 = 0;
+        while (i < len) {
+            if (lobby.active_games.borrow(i).game_id == game_id) {
+                lobby.active_games.borrow_mut(i).black = black;
+                return
+            };
+            i = i + 1;
+        };
+    }
+
     // ===== Internal helpers =====
 
     /// Distribute bets based on game result.
     /// Winner gets both bets. Draw returns each bet to its owner.
-    fun resolve_game(game: &mut Game, ctx: &mut TxContext) {
+    fun resolve_game(lobby: &mut Lobby, game: &mut Game, ctx: &mut TxContext) {
+        remove_from_active_games(lobby, object::id(game));
         if (game.status == WHITE_WINS()) {
             let black_bet = balance::withdraw_all(&mut game.black_bet);
             balance::join(&mut game.white_bet, black_bet);
