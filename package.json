@@ -1,15 +1,6 @@
 {
-  "name": "sui-chess",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "private": true,
+  "description": "Root package for prettier-plugin-move (formats Move smart contracts). Frontend dependencies are in frontend/package.json.",
   "devDependencies": {
     "@mysten/prettier-plugin-move": "^0.3.5"
   }
