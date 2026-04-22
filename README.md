@@ -116,8 +116,10 @@ sui-chess/
 
 ```bash
 cd move
-sui move test --gas-limit 50000000000
+sui move test -e devnet
 ```
+
+The `-e devnet` flag is needed because `Move.toml` uses an empty chain ID for devnet (to avoid hardcoding the ID that changes on resets). If your CLI is switched to testnet or mainnet, you can omit it.
 
 - `chess_rules_tests` (60) — per-piece move validation, check/checkmate/stalemate detection, castling, en passant, pawn promotion
 - `chess_tests` (20) — game lifecycle, lobby, betting distribution, resignation, draw

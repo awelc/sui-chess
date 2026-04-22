@@ -34,7 +34,6 @@ echo "Network:  $(sui client active-env)"
 echo ""
 
 GAS_BUDGET=10000000
-HIGH_GAS_BUDGET=50000000
 BET_AMOUNT=1000000      # 0.001 SUI — bet per game
 MIN_TOTAL=50000000      # 0.05 SUI — minimum total balance to run all 3 scenarios
 FAUCET_TIMEOUT=120      # seconds to wait for faucet (devnet only)
@@ -162,26 +161,6 @@ sui_call() {
     echo "$output" | grep "Transaction Digest:" | awk '{print $3}'
 }
 
-# Like sui_call but with higher gas budget (for checkmate moves).
-sui_call_high_gas() {
-    local addr_alias=$1
-    local func=$2
-    shift 2
-    local args=("$@")
-
-    sui client switch --address "$addr_alias" > /dev/null 2>&1
-
-    local output
-    output=$(sui client call \
-        --package "$PACKAGE_ID" \
-        --module chess \
-        --function "$func" \
-        --args "${args[@]}" \
-        --gas-budget $HIGH_GAS_BUDGET 2>&1)
-
-    echo "$output" | grep "Transaction Digest:" | awk '{print $3}'
-}
-
 # Query transaction for structured JSON.
 tx_json() {
     local digest=$1
@@ -289,7 +268,7 @@ echo "[Black] Ng8→f6??"
 sui_call black-player make_move "$LOBBY_ID" "$GAME_ID2" 6 8 5 6 0 > /dev/null
 
 echo "[White] Qh5×f7# (CHECKMATE)"
-DIGEST=$(sui_call_high_gas white-player make_move "$LOBBY_ID" "$GAME_ID2" 7 5 5 7 0)
+DIGEST=$(sui_call white-player make_move "$LOBBY_ID" "$GAME_ID2" 7 5 5 7 0)
 JSON=$(tx_json "$DIGEST")
 report_gas "checkmate_move" "$JSON"
 
